@@ -11,35 +11,35 @@
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
   <style>
+    /* CSS Adjustments for 8 Rows */
     .routine-output-wrap {
       background: white; border-radius: 12px; overflow: hidden;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.4); padding: 22px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4); padding: 24px; /* Padding reduced to fit content */
     }
-    .routine-header-block { text-align: center; margin-bottom: 24px; }
+    .routine-header-block { text-align: center; margin-bottom: 14px; } /* Margin reduced */
     .routine-header-block .uni { font-size: 13pt; font-weight: 800; color: #0B1D3A; font-family: 'Times New Roman', serif; }
-    .routine-header-block .dept { font-size: 10.5pt; font-weight: 600; color: #333; margin-top: 2px; }
-    .routine-header-block .title { font-size: 12pt; font-weight: 700; margin: 10px 0 4px; color: #0B1D3A; letter-spacing: 1px; text-transform: uppercase; }
+    .routine-header-block .title { font-size: 11pt; font-weight: 700; margin: 6px 0 4px; color: #0B1D3A; letter-spacing: 1px; text-transform: uppercase; }
     .routine-header-block .section-badge {
       display: inline-block; background: #0B1D3A; color: #C9A84C;
-      font-size: 11pt; font-weight: 800; padding: 5px 28px; border-radius: 6px;
-      letter-spacing: 2px; margin-top: 8px;
+      font-size: 10pt; font-weight: 800; padding: 4px 24px; border-radius: 6px;
+      letter-spacing: 2px; margin-top: 4px;
     }
     .routine-table { width: 100%; border-collapse: collapse; font-family: var(--ff-body); font-size: 0.78rem; }
     .routine-table th {
       background: #0B1D3A; color: #C9A84C; text-align: center;
-      padding: 10px 8px; font-weight: 700; letter-spacing: 0.5px;
+      padding: 8px 6px; font-weight: 700; letter-spacing: 0.5px;
       border: 1.5px solid #0B1D3A;
     }
     .routine-table td {
-      border: 1px solid #ccc; padding: 10px 6px; text-align: center;
-      vertical-align: middle; color: #222; background: white; min-height: 50px;
+      border: 1px solid #ccc; padding: 6px 4px; text-align: center; /* Padding reduced, removed min-height */
+      vertical-align: middle; color: #222; background: white; 
     }
     .routine-table td.empty { background: #fafafa; color: #ccc; font-size: 0.75rem; }
-    .cell-course { font-weight: 700; font-size: 0.82rem; color: #0B1D3A; }
-    .cell-room { font-size: 0.7rem; color: #666; margin-top: 2px; }
+    .cell-course { font-weight: 700; font-size: 0.78rem; color: #0B1D3A; }
+    .cell-room { font-size: 0.68rem; color: #666; margin-top: 1px; }
     .cell-badge {
-      font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 4px;
-      display: inline-block; margin-top: 3px; letter-spacing: 0.5px;
+      font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+      display: inline-block; margin-top: 2px; letter-spacing: 0.5px;
     }
     .badge-theory { background: #EBF4FF; color: #1D4ED8; }
     .badge-lab { background: #FEF3C7; color: #B45309; }
@@ -128,7 +128,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const TIME_SLOTS = ['08:50 AM','09:40 AM','10:30 AM','11:20 AM','12:10 PM','01:50 PM','02:40 PM','03:30 PM'];
+// আপনার যোগ করা নতুন টাইম স্লটগুলো এখানে দেওয়া হলো
+const TIME_SLOTS = ['08:50 AM', '09:40 AM', '10:30 AM', '11:20 AM', '12:10 PM', '01:50 PM', '02:40 PM', '03:30 PM'];
 const DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
 
 // ─── GENERATE ROUTINE FROM FIREBASE ─────────
@@ -139,7 +140,6 @@ function generateRoutine() {
   notify('⏳ Fetching live routine...');
   const result = document.getElementById('routine-result');
 
-  // Firebase থেকে ডেটা আনা হচ্ছে
   db.ref('routines/' + section).once('value').then((snapshot) => {
     const secData = snapshot.val();
 
@@ -153,10 +153,9 @@ function generateRoutine() {
       return;
     }
 
-    // Build table
     let rows = '';
     TIME_SLOTS.forEach(time => {
-      let row = `<tr><td style="font-weight:700;color:#0B1D3A;white-space:nowrap;background:#f8f8ff;padding:10px 14px;">${time}</td>`;
+      let row = `<tr><td style="font-weight:700;color:#0B1D3A;white-space:nowrap;background:#f8f8ff;padding:8px 12px;">${time}</td>`;
       DAYS.forEach(day => {
         const key = `${day}|${time}`;
         const cell = secData[key];
@@ -184,11 +183,10 @@ function generateRoutine() {
             <button class="btn btn-outline" onclick="downloadRoutineJPG()">🖼️ JPG</button>
           </div>
         </div>
-        <div style="padding:0 14px 28px;">
+        <div style="padding:0 28px 28px;">
           <div class="routine-output-wrap" id="routine-printable">
             <div class="routine-header-block">
               <div class="uni">Northern University of Business &amp; Technology Khulna</div>
-              <div class="dept">Department of Computer Science &amp; Engineering</div>
               <div class="title">Class Schedule · Spring 2025</div>
               <div class="section-badge">SECTION — ${section}</div>
             </div>
@@ -215,8 +213,10 @@ function generateRoutine() {
 
 function downloadRoutinePDF() {
   const el = document.getElementById('routine-printable');
+  // PDF এর ওপর-নিচের মার্জিন একটু কমিয়ে দেওয়া হয়েছে যেন সেভ থাকার জায়গা পায়
   html2pdf().set({
-    margin: 8, filename: `NUBTK_Routine_Section_${document.getElementById('section-input').value}.pdf`,
+    margin: [6, 10, 6, 10], 
+    filename: `NUBTK_Routine_Section_${document.getElementById('section-input').value}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
