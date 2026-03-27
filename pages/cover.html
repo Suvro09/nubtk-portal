@@ -168,28 +168,25 @@ function notify(msg, dur=2800) {
 }
 function toggleNav() { document.querySelector('.nav-links').classList.toggle('open'); }
 
-  function adjustPreviewScale() {
+function adjustPreviewScale() {
   const outer = document.querySelector('.preview-scale-outer');
   const shadow = document.querySelector('.preview-shadow');
   if (!outer || !shadow) return;
   
-  const availableWidth = outer.clientWidth - 20; // 20px to leave some space on both sides
-  const originalWidth = 794; // Original size of A4 page
+  const availableWidth = outer.clientWidth - 20; 
+  const originalWidth = 794; 
   
   if (availableWidth < originalWidth) {
     const scale = availableWidth / originalWidth;
     shadow.style.transform = `scale(${scale})`;
-    outer.style.height = `${(1120 * scale) + 60}px`; // Original size of A4 page
+    outer.style.height = `${(1120 * scale) + 60}px`; 
   } else {
     shadow.style.transform = 'scale(1)';
     outer.style.height = 'auto';
   }
 }
-
-// Automatically scales when the screen is rotated or resized
 window.addEventListener('resize', adjustPreviewScale);
 
-  
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b,i) => {
     b.classList.toggle('active', ['edit','preview','saved'][i] === tab);
@@ -199,7 +196,7 @@ function switchTab(tab) {
   });
   if (tab === 'preview') {
     renderPreview();
-    setTimeout(adjustPreviewScale, 10); // Automatically scales when you go to the preview tab.ে
+    setTimeout(adjustPreviewScale, 10);
   }
   if (tab === 'saved') renderSavedList();
 }
@@ -285,7 +282,6 @@ function selectLogo(idx, save=true) {
 }
 
 // ─── COLLECT FORM DATA ───────────────────────
-// ─── COLLECT FORM DATA ───────────────────────
 function collectData() {
   const cfg = getAdminConfig();
   const data = { logoIdx: selectedLogoIdx };
@@ -295,7 +291,7 @@ function collectData() {
     const el = document.getElementById('field_' + f.id);
     if (el) {
       data[f.id] = el.value;
-      // IF field required but field is empty
+      // চেক করছি কোনো Required ফিল্ড ফাঁকা আছে কি না
       if (f.required && el.value.trim() === '') {
         missingRequired = true;
       }
@@ -305,46 +301,21 @@ function collectData() {
 }
 
 function saveDraft() {
-  const { data, missingRequired } = collectData();
-  
-  if (missingRequired) {
-    notify('⚠️ Fill the Fields');
-    return false; // Stop Save
-  }
-  
+  const { data } = collectData(); // সেভ করার সময় Required ফিল্ড চেক করবে না
   localStorage.setItem('nubtk_cover_draft', JSON.stringify(data));
   notify('✅ Draft saved!');
-  return true;
 }
 
 function saveAndPreview() {
-  if (saveDraft()) {
-    switchTab('preview');
-  }
+  saveDraft();
+  switchTab('preview');
 }
 
 function resetForm() {
   localStorage.removeItem('nubtk_cover_draft');
   selectedLogoIdx = null;
-  renderFieldsEditor();
+  renderFields();
   notify('↺ Form reset');
-}
-
-// ─── SAVED DRAFTS ────────────────────────────
-function saveDraftNamed() {
-  const { data, missingRequired } = collectData();
-  
-  if (missingRequired) {
-    notify('⚠️ Fill the Fields');
-    return; // Stop saved
-  }
-  
-  const name = prompt('Name this cover page:');
-  if (!name) return;
-  const list = JSON.parse(localStorage.getItem('nubtk_saved_covers') || '[]');
-  list.push({ name, data, ts: Date.now() });
-  localStorage.setItem('nubtk_saved_covers', JSON.stringify(list));
-  notify('✅ Saved: ' + name);
 }
 
 // ─── RENDER PREVIEW ──────────────────────────
@@ -414,9 +385,18 @@ function renderPreview() {
 
 // ─── DOWNLOAD ───────────────────────────────
 function downloadPDF() {
+  const { missingRequired } = collectData();
+  
+  // ডাউনলোড করার সময় চেক করবে ফিল্ড ফাঁকা আছে কি না
+  if (missingRequired) {
+    notify('⚠️ Fill the Required Fields first!');
+    switchTab('edit'); // এডিট ফর্মে ফেরত পাঠাবে
+    return;
+  }
+
   const el = document.getElementById('cover-page');
   const shadow = document.querySelector('.preview-shadow');
-  if(shadow) shadow.style.transform = 'scale(1)'; // ডাউনলোডের ঠিক আগে অরিজিনাল সাইজে আনা
+  if(shadow) shadow.style.transform = 'scale(1)'; 
   
   html2pdf().set({
     margin: 0, filename: 'NUBTK_Cover_Page.pdf',
@@ -424,12 +404,21 @@ function downloadPDF() {
     html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
     jsPDF: { unit: 'px', format: [794, 1120], orientation: 'portrait' } 
   }).from(el).save().then(() => {
-    adjustPreviewScale(); // ডাউনলোড শুরু হলে আবার আগের মতো ছোট করে দেওয়া
+    adjustPreviewScale(); 
   });
   notify('⬇️ Downloading PDF...');
 }
 
 function downloadJPG() {
+  const { missingRequired } = collectData();
+  
+  // ডাউনলোড করার সময় চেক করবে ফিল্ড ফাঁকা আছে কি না
+  if (missingRequired) {
+    notify('⚠️ Fill the Required Fields first!');
+    switchTab('edit');
+    return;
+  }
+
   const el = document.getElementById('cover-page');
   const shadow = document.querySelector('.preview-shadow');
   if(shadow) shadow.style.transform = 'scale(1)'; 
@@ -446,7 +435,7 @@ function downloadJPG() {
 
 // ─── SAVED DRAFTS ────────────────────────────
 function saveDraftNamed() {
-  const data = collectData();
+  const { data } = collectData(); // সেভ করার সময় Required ফিল্ড চেক করবে না
   const name = prompt('Name this cover page:');
   if (!name) return;
   const list = JSON.parse(localStorage.getItem('nubtk_saved_covers') || '[]');
