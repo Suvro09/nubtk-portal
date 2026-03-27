@@ -223,26 +223,48 @@ const db = firebase.database();
 let liveRoutineData = {}; // Stores the latest fetched data
 
 // ─── AUTH ─────────────────────────────────────
+// ─── AUTH (Updated with Firebase) ─────────────────────────────────────
 function tryLogin() {
   const pw = document.getElementById('admin-pw').value;
-  const stored = localStorage.getItem('nubtk_admin_pw') || 'nubtk2025';
-  if (pw === stored) {
-    document.getElementById('admin-login').style.display = 'none';
-    document.getElementById('admin-main').style.display = 'block';
-    renderLogos(); renderFieldsEditor(); listenToFirebase();
-    notify('✅ Welcome, Admin!');
-  } else {
-    notify('❌ Wrong password!');
-  }
+  if (!pw) { notify('⚠️ Please enter the password'); return; }
+
+  // Checking passwords from Firebase database
+  notify('⏳ Checking password...');
+  db.ref('settings/adminPassword').once('value').then((snapshot) => {
+    // If there is no password in the database, we will take the default 'nubtk2025'ে
+    const storedPw = snapshot.val() || 'nubtk2025'; 
+    
+    if (pw === storedPw) {
+      document.getElementById('admin-login').style.display = 'none';
+      document.getElementById('admin-main').style.display = 'block';
+      renderLogos(); renderFieldsEditor(); renderExistingSections();
+      notify('✅ Welcome, Admin!');
+    } else {
+      notify('❌ Wrong password!');
+    }
+  }).catch(e => {
+    notify('❌ Database error! Check connection.');
+    console.error(e);
+  });
 }
+
+  
 function logout() { location.reload(); }
 function changePassword() {
   const np = document.getElementById('new-pw').value;
   const cp = document.getElementById('confirm-pw').value;
-  if (!np) return;
+  if (!np) { notify('⚠️ Enter a new password'); return; }
   if (np !== cp) { notify('❌ Passwords do not match'); return; }
-  localStorage.setItem('nubtk_admin_pw', np);
-  notify('✅ Password changed!');
+  
+  // Saving new password in Firebase database
+  db.ref('settings/adminPassword').set(np).then(() => {
+    notify('✅ Password changed in Live Database!');
+    document.getElementById('new-pw').value = '';
+    document.getElementById('confirm-pw').value = '';
+  }).catch(e => {
+    notify('❌ Failed to change password!');
+    console.error(e);
+  });
 }
 
 function adminTab(tab) {
