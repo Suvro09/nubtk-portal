@@ -12,16 +12,20 @@
     /* COVER PAGE PRINT STYLES */
     .cover-preview {
       background: white; color: #111;
-      width: 794px; height: 1120px; /* বাগ ফিক্স: ১ পেজের জন্য নির্দিষ্ট হাইট */
+      width: 794px; height: 1120px; 
       overflow: hidden;
-      padding: 60px 70px; font-family: 'Times New Roman', serif;
+      padding: 40px 70px; /* Top and bottom margins reduced from 60px to 40px to make room for the logo */
+      font-family: 'Times New Roman', serif;
       position: relative; box-sizing: border-box;
     }
-    .cover-header { text-align: center; margin-bottom: 36px; }
+    .cover-header { text-align: center; margin-bottom: 20px; } /* Reduced from 36px to 20px */
     
-    /* নতুন ডিজাইন: লোগো উপরে মাঝখানে এবং বড় */
     .cover-logo-row { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; margin-bottom: 14px; }
-    .cover-logo-img { width: 120px; height: 120px; object-fit: contain; } /* লোগোর সাইজ বড় করা হয়েছে */
+    
+    .cover-logo-img { 
+      width: 165px; height: 165px; /* Logo size increased from 120px to 165px */
+      object-fit: contain; 
+    }
     
     .cover-uni-name { font-size: 18pt; font-weight: 900; line-height: 1.25; color: #000; }
     .cover-dept { font-size: 13pt; font-weight: 700; margin-top: 8px; color: #111; }
@@ -34,9 +38,10 @@
       border: 2.5px solid #000; padding: 6px 32px; letter-spacing: 2px;
       text-transform: uppercase; margin: 12px 0;
     }
-    .cover-title { text-align: center; font-size: 12pt; font-style: italic; margin-bottom: 32px; color: #333; }
     
-    /* অরিজিনাল টেবিল ডিজাইন */
+    .cover-title { text-align: center; font-size: 12pt; font-style: italic; margin-bottom: 20px; color: #333; } /* Reduced from 32px to 20px */
+    
+    /* ORIGINAL TABLE DESIGN */
     .cover-table {
       width: 100%; border-collapse: collapse; margin-top: 16px;
       font-size: 11pt;
