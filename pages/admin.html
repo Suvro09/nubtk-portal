@@ -341,7 +341,8 @@ function collectData() {
 }
 
 function saveDraft() {
-  const { data } = collectData(); // সেভ করার সময় Required ফিল্ড চেক করবে না
+  // প্রিভিউ দেখার সময় কোনো Required চেক করবে না, যা আছে তাই সেভ করবে
+  const { data } = collectData(); 
   localStorage.setItem('nubtk_cover_draft', JSON.stringify(data));
   notify('✅ Draft saved!');
 }
@@ -430,7 +431,7 @@ function downloadPDF() {
   // ডাউনলোড করার সময় চেক করবে ফিল্ড ফাঁকা আছে কি না
   if (missingRequired) {
     notify('⚠️ Fill the Required Fields first!');
-    switchTab('edit'); // এডিট ফর্মে ফেরত পাঠাবে
+    switchTab('edit'); // ফাঁকা থাকলে এডিট ফর্মে ফেরত পাঠাবে
     return;
   }
 
@@ -455,7 +456,7 @@ function downloadJPG() {
   // ডাউনলোড করার সময় চেক করবে ফিল্ড ফাঁকা আছে কি না
   if (missingRequired) {
     notify('⚠️ Fill the Required Fields first!');
-    switchTab('edit');
+    switchTab('edit'); // ফাঁকা থাকলে এডিট ফর্মে ফেরত পাঠাবে
     return;
   }
 
@@ -475,7 +476,7 @@ function downloadJPG() {
 
 // ─── SAVED DRAFTS ────────────────────────────
 function saveDraftNamed() {
-  const { data } = collectData(); // সেভ করার সময় Required ফিল্ড চেক করবে না
+  const { data } = collectData(); 
   const name = prompt('Name this cover page:');
   if (!name) return;
   const list = JSON.parse(localStorage.getItem('nubtk_saved_covers') || '[]');
@@ -513,7 +514,6 @@ function deleteSaved(i) {
   renderSavedList();
   notify('🗑️ Deleted');
 }
-
 // ─── INIT ────────────────────────────────────
 renderFields();
 </script>
