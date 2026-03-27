@@ -220,9 +220,9 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-let liveRoutineData = {}; // Stores the latest fetched data
+let liveRoutineData = {}; 
 
-// ─── AUTH (Updated with Firebase & Easter Egg 😜) ──────────────────
+// ─── AUTH & FIREBASE FETCH ──────────────────
 function tryLogin() {
   const pw = document.getElementById('admin-pw').value;
   if (!pw) { notify('⚠️ Please enter the password'); return; }
@@ -234,7 +234,10 @@ function tryLogin() {
     if (pw === storedPw) {
       document.getElementById('admin-login').style.display = 'none';
       document.getElementById('admin-main').style.display = 'block';
-      renderLogos(); renderFieldsEditor(); listenToFirebase();
+      
+      // লগিন সাকসেস হলে ডাটাবেস থেকে সব লোড করবে
+      loadAdminSettings(); 
+      listenToFirebase();
       notify('✅ Welcome, Admin!');
     } else if (pw === 'nubtk2025') {
       notify('এত সোজা না চান্দু 😜');
@@ -243,7 +246,6 @@ function tryLogin() {
     }
   }).catch(e => {
     notify('❌ Database error! Check connection.');
-    console.error(e);
   });
 }
 
@@ -257,9 +259,6 @@ function changePassword() {
     notify('✅ Password changed in Live Database!');
     document.getElementById('new-pw').value = '';
     document.getElementById('confirm-pw').value = '';
-  }).catch(e => {
-    notify('❌ Failed to change password!');
-    console.error(e);
   });
 }
 
@@ -276,9 +275,8 @@ function adminTab(tab) {
 }
 document.addEventListener('DOMContentLoaded', () => { adminTab('logos'); });
 
-// ─── FIREBASE ROUTINE SYNC (REPLACES LOCALSTORAGE) ───
+// ─── FIREBASE ROUTINE SYNC ───
 const DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday'];
-// আপনার যোগ করা নতুন ৮টি টাইম স্লট
 const TIME_SLOTS = ['08:50 AM', '09:40 AM', '10:30 AM', '11:20 AM', '12:10 PM', '01:50 PM', '02:40 PM', '03:30 PM'];
 let editingSection = '';
 
@@ -353,7 +351,7 @@ function saveRoutineSection() {
   
   db.ref('routines/' + editingSection).set(secData).then(() => {
     notify(`☁️ Live Sync Successful for ${editingSection}`);
-  }).catch(e => notify('❌ Sync failed: ' + e.message));
+  }).catch(e => notify('❌ Sync failed'));
 }
 
 function deleteRoutineSection() {
@@ -373,7 +371,6 @@ function quickLoad(sec) {
   adminTab('routine');
 }
 
-// ─── CSV BULK UPLOAD TO FIREBASE ─────────────
 function handleCSVUpload() {
   const fileInput = document.getElementById('csv-upload-input');
   if (!fileInput.files.length) { notify('⚠️ Select a CSV file first!'); return; }
@@ -411,17 +408,26 @@ function processCSVData(csvText) {
   }
 
   db.ref('routines').set(allData).then(() => {
-    notify(`☁️ Success! Synced ${count} classes to Live Database.`);
+    notify(`☁️ Success! Synced ${count} classes.`);
     document.getElementById('csv-upload-input').value = ''; 
-  }).catch(e => notify('❌ Upload failed: ' + e.message));
+  });
 }
 
-// ─── LOGOS & FIELDS (Kept in LocalStorage for Admin only) ───
+// ─── LOGOS & FIELDS (Synced with Firebase) ───
 let uploadedLogos = [];
-function renderLogos() {
-  uploadedLogos = JSON.parse(localStorage.getItem('nubtk_admin_logos') || '[]');
-  redrawLogos();
+let adminFields = [];
+
+// ফায়ারবেস থেকে লোগো ও ফিল্ড লোড করা
+function loadAdminSettings() {
+  db.ref('settings').once('value', snap => {
+    const data = snap.val() || {};
+    uploadedLogos = data.logos || [];
+    adminFields = data.fields || getDefaultFields();
+    redrawLogos();
+    renderFieldsEditor();
+  });
 }
+
 function redrawLogos() {
   document.getElementById('uploaded-logos-display').innerHTML = uploadedLogos.map((src,i) => `
     <div class="uploaded-logo-item"><img src="${src}"/><button class="del-logo" onclick="removeLogo(${i})">✕</button></div>`).join('');
@@ -434,12 +440,12 @@ function handleLogoUpload(input) {
   });
 }
 function removeLogo(i) { uploadedLogos.splice(i,1); redrawLogos(); }
+
+// ফায়ারবেসে লোগো সেভ করা
 function saveLogos() {
-  const cfg = JSON.parse(localStorage.getItem('nubtk_cover_config') || '{}');
-  cfg.logoOptions = uploadedLogos;
-  localStorage.setItem('nubtk_cover_config', JSON.stringify(cfg));
-  localStorage.setItem('nubtk_admin_logos', JSON.stringify(uploadedLogos));
-  notify('✅ Logos saved globally!');
+  db.ref('settings/logos').set(uploadedLogos).then(() => {
+    notify('✅ Logos saved to Live Database!');
+  });
 }
 
 function getDefaultFields() {
@@ -456,11 +462,8 @@ function getDefaultFields() {
   ];
 }
 
-let adminFields = [];
-
 function renderFieldsEditor() {
-  const cfg = JSON.parse(localStorage.getItem('nubtk_cover_config') || '{}');
-  if (adminFields.length === 0) adminFields = cfg.fields || getDefaultFields();
+  if (adminFields.length === 0) adminFields = getDefaultFields();
 
   let html = '';
   adminFields.forEach((f, i) => {
@@ -513,7 +516,6 @@ function renderFieldsEditor() {
   document.getElementById('fields-editor').innerHTML = html;
 }
 
-// ─── FIELD BUILDER LOGIC ───
 function updateField(i, key, val) {
   adminFields[i][key] = val;
   if (key === 'type' && val === 'select' && !adminFields[i].options) adminFields[i].options = ['New Option'];
@@ -541,11 +543,11 @@ function addOption(fIdx) {
   renderFieldsEditor();
 }
 
+// ফায়ারবেসে ফিল্ড সেভ করা
 function saveFieldConfig() {
-  const cfg = JSON.parse(localStorage.getItem('nubtk_cover_config') || '{}');
-  cfg.fields = adminFields;
-  localStorage.setItem('nubtk_cover_config', JSON.stringify(cfg));
-  notify('✅ Cover Page Fields Saved Successfully!');
+  db.ref('settings/fields').set(adminFields).then(() => {
+    notify('✅ Fields Saved to Live Database!');
+  });
 }
 
 function resetFieldConfig() {
