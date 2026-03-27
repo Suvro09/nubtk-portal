@@ -8,6 +8,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
   <style>
     .routine-output-wrap {
       background: white; border-radius: 12px; overflow: hidden;
@@ -80,7 +82,7 @@
   <div class="page-header">
     <div class="breadcrumb"><a href="../index.html">Home</a> › Class Routine</div>
     <h1>Class Routine</h1>
-    <p>Enter your section code to generate your personalized class schedule.</p>
+    <p>Enter your section code to generate your personalized class schedule from the Live Database.</p>
   </div>
 
   <div class="section-card">
@@ -113,124 +115,110 @@ function notify(msg, dur=2800) {
   setTimeout(() => n.classList.remove('show'), dur);
 }
 
-// ─── TIME SLOTS ─────────────────────────────
-const TIME_SLOTS = [
-  '10:30 AM', '11:20 AM', '12:10 PM', '01:50 PM', '02:40 PM', '03:30 PM'
-];
+// ─── FIREBASE SETUP ────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCF9BoDxWa-0XTwbCBxjHrrBdQrKioJua8",
+  authDomain: "nubtk-portal.firebaseapp.com",
+  databaseURL: "https://nubtk-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "nubtk-portal",
+  storageBucket: "nubtk-portal.firebasestorage.app",
+  messagingSenderId: "45891604739",
+  appId: "1:45891604739:web:33251f784080f09816d936"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const TIME_SLOTS = ['10:30 AM', '11:20 AM', '12:10 PM', '01:50 PM', '02:40 PM', '03:30 PM'];
 const DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday'];
 
-// ─── LOAD ROUTINE DATA ───────────────────────
-function getRoutineData() {
-  const stored = localStorage.getItem('nubtk_routine_data');
-  if (stored) return JSON.parse(stored);
-  // Built-in default data for Section 2D from the uploaded schedule image
-  return getBuiltinRoutine();
-}
-
-function getBuiltinRoutine() {
-  // Routine data manually entered from the class schedule PDF
-  // Format: { "SECTION": { "DAY|TIME": { course, room, type } } }
-  return {
-    "2D": {
-      "Tuesday|10:30 AM": { course: "GED 1201", room: "303", type: "theory" },
-      "Saturday|11:20 AM": { course: "PHY 1201", room: "306", type: "theory" },
-      "Tuesday|11:20 AM": { course: "CSE 1205", room: "303", type: "theory" },
-      "Saturday|12:10 PM": { course: "CSE 1206", room: "LAB 1", type: "lab" },
-      "Tuesday|12:10 PM": { course: "MATH 1203", room: "303", type: "theory" },
-      "Saturday|01:50 PM": { course: "CSE 1201", room: "306", type: "theory" },
-      "Sunday|01:50 PM":   { course: "PHY 1202", room: "PHY LAB", type: "lab" },
-      "Wednesday|01:50 PM":{ course: "PHY 1201", room: "304", type: "theory" },
-      "Saturday|02:40 PM": { course: "CSE 1205", room: "306", type: "theory" },
-      "Sunday|02:40 PM":   { course: "CSE 1202", room: "DLD LAB", type: "lab" },
-      "Wednesday|02:40 PM":{ course: "ENG 1205", room: "304", type: "theory" },
-      "Saturday|03:30 PM": { course: "MATH 1203", room: "306", type: "theory" },
-      "Sunday|03:30 PM":   { course: "ENG 1205", room: "305", type: "theory" },
-      "Wednesday|03:30 PM":{ course: "CSE 1201", room: "304", type: "theory" },
-    }
-  };
-}
-
-// ─── GENERATE ROUTINE ────────────────────────
+// ─── GENERATE ROUTINE FROM FIREBASE ─────────
 function generateRoutine() {
   const section = document.getElementById('section-input').value.trim().toUpperCase();
   if (!section) { notify('⚠️ Please enter your section!'); return; }
 
-  const allData = getRoutineData();
-  const secData = allData[section];
+  notify('⏳ Fetching live routine...');
   const result = document.getElementById('routine-result');
 
-  if (!secData) {
-    result.innerHTML = `<div class="no-routine">
-      <div class="big">🔍</div>
-      <p>No routine found for section <strong>${section}</strong>.<br/>
-      Please ask your admin to add routine data, or check your section code.</p>
-    </div>`;
-    return;
-  }
+  // Firebase থেকে ডেটা আনা হচ্ছে
+  db.ref('routines/' + section).once('value').then((snapshot) => {
+    const secData = snapshot.val();
 
-  // Build table
-  let rows = '';
-  TIME_SLOTS.forEach(time => {
-    let row = `<tr><td style="font-weight:700;color:#0B1D3A;white-space:nowrap;background:#f8f8ff;padding:10px 14px;">${time}</td>`;
-    DAYS.forEach(day => {
-      const key = `${day}|${time}`;
-      const cell = secData[key];
-      if (cell) {
-        const badgeClass = cell.type === 'lab' ? 'badge-lab' : cell.type === 'phy-lab' ? 'badge-phy-lab' : 'badge-theory';
-        const badgeLabel = cell.type === 'lab' ? 'LAB' : cell.type === 'phy-lab' ? 'PHY LAB' : 'THEORY';
-        row += `<td>
-          <div class="cell-course">${cell.course}</div>
-          <div class="cell-room">${cell.room}</div>
-          <span class="cell-badge ${badgeClass}">${badgeLabel}</span>
-        </td>`;
-      } else {
-        row += `<td class="empty">—</td>`;
-      }
+    if (!secData) {
+      result.innerHTML = `<div class="no-routine">
+        <div class="big">🔍</div>
+        <p>No routine found for section <strong>${section}</strong>.<br/>
+        Please ask your admin to add routine data.</p>
+      </div>`;
+      notify('❌ Routine not found!');
+      return;
+    }
+
+    // Build table
+    let rows = '';
+    TIME_SLOTS.forEach(time => {
+      let row = `<tr><td style="font-weight:700;color:#0B1D3A;white-space:nowrap;background:#f8f8ff;padding:10px 14px;">${time}</td>`;
+      DAYS.forEach(day => {
+        const key = `${day}|${time}`;
+        const cell = secData[key];
+        if (cell) {
+          const badgeClass = cell.type === 'lab' ? 'badge-lab' : cell.type === 'phy-lab' ? 'badge-phy-lab' : 'badge-theory';
+          const badgeLabel = cell.type === 'lab' ? 'LAB' : cell.type === 'phy-lab' ? 'PHY LAB' : 'THEORY';
+          row += `<td>
+            <div class="cell-course">${cell.course}</div>
+            <div class="cell-room">${cell.room}</div>
+            <span class="cell-badge ${badgeClass}">${badgeLabel}</span>
+          </td>`;
+        } else {
+          row += `<td class="empty">—</td>`;
+        }
+      });
+      row += '</tr>';
+      rows += row;
     });
-    row += '</tr>';
-    rows += row;
-  });
 
-  result.innerHTML = `
-    <div class="section-card" style="padding:0;overflow:hidden;" id="routine-card">
-      <div style="padding:24px 28px 0;">
-        <div class="btn-row" style="margin-top:0;margin-bottom:20px;">
-          <button class="btn btn-gold" onclick="downloadRoutinePDF()">⬇️ PDF</button>
-          <button class="btn btn-outline" onclick="downloadRoutineJPG()">🖼️ JPG</button>
-        </div>
-      </div>
-      <div style="padding:0 28px 28px;">
-        <div class="routine-output-wrap" id="routine-printable">
-          <div class="routine-header-block">
-            <div class="uni">Northern University of Business &amp; Technology Khulna</div>
-            <div class="dept">Department of Computer Science &amp; Engineering</div>
-            <div class="title">Class Schedule · Spring 2025</div>
-            <div class="section-badge">SECTION — ${section}</div>
-          </div>
-          <div style="overflow-x:auto;">
-            <table class="routine-table">
-              <thead>
-                <tr>
-                  <th>TIME</th>
-                  ${DAYS.map(d => `<th>${d.toUpperCase()}</th>`).join('')}
-                </tr>
-              </thead>
-              <tbody>${rows}</tbody>
-            </table>
+    result.innerHTML = `
+      <div class="section-card" style="padding:0;overflow:hidden;" id="routine-card">
+        <div style="padding:24px 28px 0;">
+          <div class="btn-row" style="margin-top:0;margin-bottom:20px;">
+            <button class="btn btn-gold" onclick="downloadRoutinePDF()">⬇️ PDF</button>
+            <button class="btn btn-outline" onclick="downloadRoutineJPG()">🖼️ JPG</button>
           </div>
         </div>
-      </div>
-    </div>`;
-  notify(`✅ Routine generated for Section ${section}`);
+        <div style="padding:0 28px 28px;">
+          <div class="routine-output-wrap" id="routine-printable">
+            <div class="routine-header-block">
+              <div class="uni">Northern University of Business &amp; Technology Khulna</div>
+              <div class="dept">Department of Computer Science &amp; Engineering</div>
+              <div class="title">Class Schedule · Spring 2025</div>
+              <div class="section-badge">SECTION — ${section}</div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="routine-table">
+                <thead>
+                  <tr>
+                    <th>TIME</th>
+                    ${DAYS.map(d => `<th>${d.toUpperCase()}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    notify(`✅ Routine loaded for Section ${section}`);
+  }).catch((error) => {
+    notify('❌ Error connecting to database!');
+    console.error(error);
+  });
 }
 
 function downloadRoutinePDF() {
   const el = document.getElementById('routine-printable');
   html2pdf().set({
-    margin: 8, 
-    filename: `NUBTK_Routine_Section_${document.getElementById('section-input').value}.pdf`,
+    margin: 8, filename: `NUBTK_Routine_Section_${document.getElementById('section-input').value}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, // scrollY: 0
+    html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
   }).from(el).save();
   notify('⬇️ Downloading PDF...');
@@ -238,7 +226,7 @@ function downloadRoutinePDF() {
 
 function downloadRoutineJPG() {
   const el = document.getElementById('routine-printable');
-  html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#fff' }).then(canvas => {
+  html2canvas(el, { scale: 2, useCORS: true, scrollY: 0, backgroundColor: '#fff' }).then(canvas => {
     const link = document.createElement('a');
     link.download = `NUBTK_Routine_Section_${document.getElementById('section-input').value}.jpg`;
     link.href = canvas.toDataURL('image/jpeg', 0.95);
