@@ -227,9 +227,10 @@ function generateRoutine() {
 function downloadRoutinePDF() {
   const el = document.getElementById('routine-printable');
   html2pdf().set({
-    margin: 8, filename: `NUBTK_Routine_Section_${document.getElementById('section-input').value}.pdf`,
-    image: { type: 'jpeg', quality: 0.97 },
-    html2canvas: { scale: 2, useCORS: true },
+    margin: 8, 
+    filename: `NUBTK_Routine_Section_${document.getElementById('section-input').value}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, // scrollY: 0
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
   }).from(el).save();
   notify('⬇️ Downloading PDF...');
