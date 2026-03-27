@@ -527,7 +527,6 @@ function handleCSVUpload() {
 }
 
 function processCSVData(csvText) {
-  // Separate line by line
   const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
   
   if (lines.length < 2) {
@@ -538,20 +537,19 @@ function processCSVData(csvText) {
   const allData = JSON.parse(localStorage.getItem('nubtk_routine_data') || '{}');
   let count = 0;
 
-  // Loop from the 2nd line, excluding the first line (heading).ো
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.trim());
+    // CSV এর লাইনগুলো পার্স করার একটি সহজ রেগুলার এক্সপ্রেশন
+    const cols = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.trim().replace(/^"|"$/g, ''));
     
-    // Only take data if there are 6 columns.ে
     if (cols.length >= 6) {
       const sec = cols[0].toUpperCase();
-      const day = cols[1]; // e.g. Saturday
-      const time = cols[2]; // e.g. 10:30 AM
+      const day = cols[1]; 
+      const time = cols[2]; 
       const course = cols[3];
       const room = cols[4];
-      const type = cols[5].toLowerCase(); // theory, lab, phy-lab
+      const type = cols[5].toLowerCase(); 
 
-      if (!sec || !day || !time || !course) continue; // Skip blank data.ে
+      if (!sec || !day || !time || !course) continue;
 
       if (!allData[sec]) allData[sec] = {};
       const key = `${day}|${time}`;
@@ -564,9 +562,8 @@ function processCSVData(csvText) {
   localStorage.setItem('nubtk_routine_data', JSON.stringify(allData));
   notify(`✅ Success! Uploaded ${count} classes.`);
   
-  // UI Update
   renderExistingSections();
-  document.getElementById('csv-upload-input').value = ''; // ইনপুট বক্স ফাঁকা করা
+  document.getElementById('csv-upload-input').value = ''; 
 }
   
 </script>
