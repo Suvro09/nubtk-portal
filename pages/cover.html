@@ -12,7 +12,8 @@
     /* COVER PAGE PRINT STYLES */
     .cover-preview {
       background: white; color: #111;
-      width: 794px; min-height: 1123px;
+      width: 794px; height: 1123px; /* min-height instead fixed height */
+      overflow: hidden; /* content-only one page */
       padding: 60px 70px; font-family: 'Times New Roman', serif;
       position: relative; box-sizing: border-box;
     }
