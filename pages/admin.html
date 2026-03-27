@@ -429,7 +429,6 @@ function processCSVData(csvText) {
 
 
 // ─── LOGOS & FIELDS (Kept in LocalStorage for Admin only) ───
-// (These are kept local as requested to keep things simple for now)
 let uploadedLogos = [];
 function renderLogos() {
   uploadedLogos = JSON.parse(localStorage.getItem('nubtk_admin_logos') || '[]');
@@ -468,34 +467,102 @@ function getDefaultFields() {
     { id:'submissionDate', label:'Date of Submission', type:'date', required:true },
   ];
 }
+
 let adminFields = [];
+
 function renderFieldsEditor() {
   const cfg = JSON.parse(localStorage.getItem('nubtk_cover_config') || '{}');
-  adminFields = cfg.fields || getDefaultFields();
-  document.getElementById('fields-editor').innerHTML = adminFields.map((f,i) => `
-    <div class="field-item" id="fitem-${i}">
-      <div class="field-item-header">
-        <span class="field-item-label">${f.label}</span>
-        <span class="field-type-tag">${f.type}</span>
-        <label class="toggle-sw" title="Required">
-          <input type="checkbox" ${f.required?'checked':''} onchange="toggleRequired(${i},this.checked)"/>
-          <span class="toggle-track"></span>
-        </label>
+  if (adminFields.length === 0) adminFields = cfg.fields || getDefaultFields();
+
+  let html = '';
+  adminFields.forEach((f, i) => {
+    html += `
+    <div class="field-item" style="margin-bottom:15px; background:rgba(255,255,255,0.03); border:1px solid var(--border); padding:15px; border-radius:10px;">
+      <div style="display:flex; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:150px;">
+          <label style="font-size:0.8rem; color:var(--muted); display:block; margin-bottom:4px;">Field Name (Label)</label>
+          <input type="text" class="form-input" value="${f.label}" onchange="updateField(${i}, 'label', this.value)" style="padding:8px; font-size:0.9rem;"/>
+        </div>
+        <div style="width:150px;">
+          <label style="font-size:0.8rem; color:var(--muted); display:block; margin-bottom:4px;">Field Type</label>
+          <select class="form-input" onchange="updateField(${i}, 'type', this.value)" style="padding:8px; font-size:0.9rem;">
+            <option value="text" ${f.type==='text'?'selected':''}>Text Input</option>
+            <option value="select" ${f.type==='select'?'selected':''}>Dropdown Options</option>
+            <option value="date" ${f.type==='date'?'selected':''}>Date Picker</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="btn btn-outline" style="color:#f87171; border-color:#f87171; padding:7px 12px;" onclick="removeField(${i})">🗑️ Delete</button>
+        </div>
       </div>
-    </div>`).join('');
+    `;
+
+    // অপশন বেসড (Dropdown) হলে অপশন এডিট করার সেকশন দেখাবে
+    if (f.type === 'select') {
+      html += `<div style="background:rgba(0,0,0,0.2); padding:12px; border-radius:8px; border:1px dashed #555; margin-top:10px;">
+        <label style="font-size:0.85rem; color:var(--gold); display:block; margin-bottom:8px;">Dropdown Options:</label>
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">`;
+
+      (f.options || []).forEach((opt, optIdx) => {
+        html += `<div style="display:flex; align-items:center; background:var(--card-bg); border:1px solid var(--border); border-radius:6px; overflow:hidden;">
+          <input type="text" value="${opt}" onchange="updateOption(${i}, ${optIdx}, this.value)" style="background:transparent; border:none; color:white; padding:6px 10px; width:140px; outline:none; font-size:0.85rem;"/>
+          <button onclick="removeOption(${i}, ${optIdx})" style="background:#f87171; border:none; color:white; padding:6px 10px; cursor:pointer;">✕</button>
+        </div>`;
+      });
+
+      html += `<button class="btn btn-outline" style="padding:6px 12px; font-size:0.8rem;" onclick="addOption(${i})">+ Add Option</button>
+        </div></div>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `<button class="btn btn-outline" style="margin-top:10px; width:100%; border-style:dashed; border-color:var(--gold); color:var(--gold); padding:12px;" onclick="addField()">+ Add New Field</button>`;
+
+  document.getElementById('fields-editor').innerHTML = html;
 }
-function toggleRequired(i, val) { adminFields[i].required = val; saveFieldsToConfig(); }
-function saveFieldsToConfig() {
+
+// ─── FIELD BUILDER LOGIC ───
+function updateField(i, key, val) {
+  adminFields[i][key] = val;
+  if (key === 'type' && val === 'select' && !adminFields[i].options) adminFields[i].options = ['New Option'];
+  renderFieldsEditor();
+}
+function removeField(i) {
+  if(!confirm('Are you sure you want to delete this field?')) return;
+  adminFields.splice(i, 1);
+  renderFieldsEditor();
+}
+function addField() {
+  adminFields.push({ id: 'custom_'+Date.now(), label: 'New Field', type: 'text', required: false });
+  renderFieldsEditor();
+}
+function updateOption(fIdx, optIdx, val) {
+  adminFields[fIdx].options[optIdx] = val;
+}
+function removeOption(fIdx, optIdx) {
+  adminFields[fIdx].options.splice(optIdx, 1);
+  renderFieldsEditor();
+}
+function addOption(fIdx) {
+  if(!adminFields[fIdx].options) adminFields[fIdx].options = [];
+  adminFields[fIdx].options.push('New Option');
+  renderFieldsEditor();
+}
+
+function saveFieldConfig() {
   const cfg = JSON.parse(localStorage.getItem('nubtk_cover_config') || '{}');
   cfg.fields = adminFields;
   localStorage.setItem('nubtk_cover_config', JSON.stringify(cfg));
+  notify('✅ Cover Page Fields Saved Successfully!');
 }
-function saveFieldConfig() { notify('✅ Field config saved!'); }
+
 function resetFieldConfig() {
-  if (!confirm('Reset cover fields to defaults?')) return;
-  adminFields = getDefaultFields(); saveFieldsToConfig();
-  renderFieldsEditor(); notify('↺ Fields reset to defaults');
+  if (!confirm('Are you sure you want to reset all fields to default?')) return;
+  adminFields = getDefaultFields(); 
+  saveFieldConfig();
+  renderFieldsEditor(); 
 }
+  
 </script>
 </body>
 </html>
