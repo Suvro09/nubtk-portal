@@ -42,6 +42,27 @@
     }
     
     .cover-title { text-align: center; font-size: 12pt; font-style: italic; margin-bottom: 20px; color: #333; } /* Reduced from 32px to 20px */
+
+    /* DESIGN 2: Modern Left-Aligned */
+    .template-2 .cover-logo-row { flex-direction: row; justify-content: flex-start; gap: 24px; border-bottom: 3px solid #111; padding-bottom: 15px; margin-bottom: 20px; }
+    .template-2 .cover-logo-img { width: 90px; height: 90px; }
+    .template-2 .cover-header { text-align: left; margin-bottom: 15px; }
+    .template-2 .cover-uni-name { font-size: 16pt; }
+    .template-2 .cover-dept { margin-top: 0; font-size: 12pt; }
+    .template-2 .cover-divider { display: none; }
+    .template-2 .cover-meta { text-align: left; }
+    .template-2 .cover-title { text-align: left; font-size: 14pt; font-weight: bold; text-decoration: underline; font-style: normal; color: #000; }
+    .template-2 .cover-table, .template-2 .cover-table th, .template-2 .cover-table td { border: none; }
+    .template-2 .cover-table th { background: transparent; text-align: left; border-bottom: 2px solid #111; padding: 5px 0; color: #111; }
+    .template-2 .cover-table td { padding: 15px 0 0 0; }
+    .template-2 .cover-date { text-align: left; padding-left: 70px; }
+
+    /* DESIGN 3: Formal Boxed */
+    .template-3 { border: 8px double #111; padding: 32px 62px; } /* বর্ডার যোগ করায় প্যাডিং একটু কমানো হয়েছে যেন পেজ ওভারফ্লো না হয় */
+    .template-3 .cover-logo-img { width: 140px; height: 140px; }
+    .template-3 .cover-type-badge { background: #111; color: white; border: none; }
+    .template-3 .cover-table th { background: #111; color: #fff; }
+    .template-3 .cover-date { font-family: monospace; font-size: 13pt; font-weight: bold; }
     
     /* ORIGINAL TABLE DESIGN */
     .cover-table {
@@ -235,6 +256,16 @@ function renderFields() {
   let html = '';
 
   const logos = cfg.logoOptions && cfg.logoOptions.length > 0 ? cfg.logoOptions : getDefaultLogos();
+
+  // NEW DESIGN Dropdown
+  html += `<div class="form-group full">
+    <label class="form-label">Select Cover Design</label>
+    <select class="form-select" id="form-template" style="margin-bottom: 10px;">
+      <option value="template-1" ${saved.template==='template-1'?'selected':''}>Design 1: Classic Center</option>
+      <option value="template-2" ${saved.template==='template-2'?'selected':''}>Design 2: Modern Left-Aligned</option>
+      <option value="template-3" ${saved.template==='template-3'?'selected':''}>Design 3: Formal Boxed</option>
+    </select>
+  </div>`;
   html += `<div class="form-group full">
     <label class="form-label">Select Logo</label>
     <div class="logo-grid" id="logo-grid">`;
@@ -286,7 +317,13 @@ function selectLogo(idx, save=true) {
 // ─── COLLECT FORM DATA ───────────────────────
 function collectData() {
   const cfg = getAdminConfig();
-  const data = { logoIdx: selectedLogoIdx };
+  const tempSelect = document.getElementById('form-template');
+  
+  // লোগোর সাথে টেমপ্লেট ডিজাইনটাও সেভ হচ্ছে
+  const data = { 
+    logoIdx: selectedLogoIdx,
+    template: tempSelect ? tempSelect.value : 'template-1'
+  };
   let missingRequired = false;
 
   cfg.fields.forEach(f => {
@@ -340,8 +377,9 @@ function renderPreview() {
   const section = data.section || '';
   const submissionDate = data.submissionDate ? new Date(data.submissionDate).toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric'}) : '';
 
+  const selectedTemplate = data.template || 'template-1';
   document.getElementById('cover-output').innerHTML = `
-  <div class="cover-preview" id="cover-page">
+  <div class="cover-preview ${selectedTemplate}" id="cover-page">
     <div class="cover-header">
       <div class="cover-logo-row">
         <img class="cover-logo-img" src="${logoSrc}" alt="NUBTK Logo" crossorigin="anonymous"/>
