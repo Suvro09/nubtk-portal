@@ -423,8 +423,6 @@ function renderFields() {
   let html = '';
 
   const logos = cfg.logoOptions && cfg.logoOptions.length > 0 ? cfg.logoOptions : getDefaultLogos();
-
-  // NEW DESIGN Dropdown
   html += `<div class="form-group full">
     <label class="form-label">Select Cover Design</label>
     <select class="form-select" id="form-template" style="margin-bottom: 10px;">
@@ -433,16 +431,12 @@ function renderFields() {
       <option value="template-3" ${saved.template==='template-3'?'selected':''}>Design 3: Formal Boxed</option>
       <option value="template-4" ${saved.template==='template-4'?'selected':''}>Design 4: Modern Geometric (Dark)</option>
       <option value="template-5" ${saved.template==='template-5'?'selected':''}>Design 5: Academic Split (Light)</option>
-
       <option value="template-6" ${saved.template==='template-6'?'selected':''}>Design 6: NUBTK Gold Arc</option>
-      
-      <option value="template-7" ${saved.template==='template-7'?'selected':''}>Design 7: Fine Line Minimal</option> 
-
+      <option value="template-7" ${saved.template==='template-7'?'selected':''}>Design 7: Fine Line Minimal</option>
       <option value="template-wave" ${saved.template==='template-wave'?'selected':''}>Design: Abstract Wave (Pink & Blue)</option>
-
-</select>
-  </div>`;
-  html += `<div class="form-group full">
+    </select>
+  </div>
+  <div class="form-group full">
     <label class="form-label">Select Logo</label>
     <div class="logo-grid" id="logo-grid">`;
   logos.forEach((src, i) => {
@@ -471,6 +465,43 @@ function renderFields() {
 
   container.innerHTML = html;
   if (saved.logoIdx !== undefined) selectLogo(saved.logoIdx, false);
+
+  // ফিল্ডগুলো রেন্ডার হওয়ার পর অটো-আপডেট ফাংশন চালু করা হচ্ছে
+  setupAutoDesignation();
+}
+
+// ─── AUTO UPDATE DESIGNATION LOGIC ───────────
+function setupAutoDesignation() {
+  const nameInput = document.getElementById('field_teacherName');
+  const desigSelect = document.getElementById('field_teacherDesig');
+
+  if (!nameInput || !desigSelect) return;
+
+  // ফায়ারবেস থেকে পাওয়া টিচারদের ডেটা, না থাকলে এই ডিফল্ট লিস্ট কাজ করবে
+  const savedMap = JSON.parse(localStorage.getItem('nubtk_teachers_map') || 'null');
+  const teacherMap = savedMap || {
+    "Hitesh Roy": "Lecturer",
+    "Namoon Nahar Naz": "Lecturer",
+    "Md. Hasibul Islam": "Assistant Professor",
+    "Dr.": "Professor" // নামের শুরুতে Dr. থাকলে প্রফেসর সিলেক্ট হবে
+  };
+
+  nameInput.addEventListener('input', function() {
+    const typedName = this.value.trim().toLowerCase();
+    if (typedName === '') return;
+
+    // টাইপ করা নামের সাথে আমাদের লিস্ট মেলানো হচ্ছে
+    for (const [name, designation] of Object.entries(teacherMap)) {
+      if (typedName.includes(name.toLowerCase()) || name.toLowerCase().includes(typedName)) {
+        // ড্রপডাউনে ওই পদবিটা থাকলে অটো সিলেক্ট হয়ে যাবে
+        const optionExists = Array.from(desigSelect.options).some(opt => opt.value === designation);
+        if (optionExists) {
+          desigSelect.value = designation;
+        }
+        break; 
+      }
+    }
+  });
 }
 
 function getDefaultLogos() {
@@ -712,10 +743,16 @@ db.ref('settings').on('value', (snapshot) => {
   const data = snapshot.val() || {};
   const liveConfig = {
     logoOptions: data.logos || [],
-    fields: data.fields || getAdminConfig().fields // ডাটাবেসে না থাকলে ডিফল্টটা দেখাবে
+    fields: data.fields || getAdminConfig().fields 
   };
   localStorage.setItem('nubtk_cover_config', JSON.stringify(liveConfig));
-  renderFields(); // UI আপডেট করবে
+  
+  // লাইভ ডাটাবেস থেকে টিচারদের লিস্ট লোকাল স্টোরেজে সেভ করে রাখা
+  if(data.teachers) {
+    localStorage.setItem('nubtk_teachers_map', JSON.stringify(data.teachers));
+  }
+  
+  renderFields(); 
 });
   
 </script>
