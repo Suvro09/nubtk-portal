@@ -49,15 +49,21 @@
       padding: 40px 70px; overflow: hidden; border: none;
     }
     
-    /* ব্যাকগ্রাউন্ডের ওপরের ওয়েভ (Dark Blue, Grey, Pink) */
+        /* DESIGN 8: Abstract Colorful Wave - HEIGHT ADJUSTED */
+    .template-wave { 
+      background: #ffffff; color: #111; font-family: 'Times New Roman', serif; position: relative; 
+      padding: 30px 60px; overflow: hidden; border: none; 
+      box-sizing: border-box; height: 1120px; /* A4 সাইজ ফিক্সড করা হলো */
+    }
+    
+    /* ব্যাকগ্রাউন্ডের ওয়েভ */
     .template-wave::before {
       content: ''; position: absolute; top: -160px; left: -10%; 
       width: 120%; height: 280px; background: #0B1D3A; 
       border-radius: 50%;
-      box-shadow: 0 20px 0 #A0AEC0, 0 60px 0 #D81B60; /* গ্রে এবং পিঙ্ক লেয়ার */
+      box-shadow: 0 20px 0 #A0AEC0, 0 60px 0 #D81B60; 
       transform: rotate(-5deg); z-index: 1; pointer-events: none;
     }
-    /* ব্যাকগ্রাউন্ডের নিচের ওয়েভ (Dark Blue, Grey, Pink) */
     .template-wave::after {
       content: ''; position: absolute; bottom: -160px; left: -10%; 
       width: 120%; height: 280px; background: #0B1D3A; 
@@ -66,32 +72,28 @@
       transform: rotate(-5deg); z-index: 1; pointer-events: none;
     }
     
-    /* Classic Center Layout (মাঝখানে সব লেখা) */
+    /* Classic Center Layout */
     .template-wave .cover-header, .template-wave .cover-meta, .template-wave .cover-title, .template-wave .cover-table, .template-wave .cover-date {
       position: relative; z-index: 2; text-align: center;
     }
-    .template-wave .cover-logo-row { flex-direction: column; align-items: center; gap: 15px; margin-bottom: 15px; margin-top: 50px; }
+    .template-wave .cover-logo-row { flex-direction: column; align-items: center; gap: 10px; margin-bottom: 10px; margin-top: 25px; } /* গ্যাপ কমানো হয়েছে */
     
-    /* লোগোটি যেন ওয়েভের ওপর সুন্দরভাবে ফুটে ওঠে */
-    .template-wave .cover-logo-img { width: 140px; height: 140px; background: white; border-radius: 50%; padding: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+    .template-wave .cover-logo-img { width: 120px; height: 120px; background: white; border-radius: 50%; padding: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); } /* লোগো সামান্য ছোট করা হয়েছে */
     
-    .template-wave .cover-uni-name { color: #111; font-size: 18pt; font-weight: bold; }
-    .template-wave .cover-dept { color: #333; margin-top: 5px; font-size: 13pt; font-weight: bold; }
-    .template-wave .cover-divider { display: none; } /* ওয়েভ ডিজাইনে দাগ ভালো লাগে না */
+    .template-wave .cover-uni-name { color: #111; font-size: 17pt; font-weight: bold; line-height: 1.2; }
+    .template-wave .cover-dept { color: #333; margin-top: 5px; font-size: 12pt; font-weight: bold; }
+    .template-wave .cover-divider { display: none; } 
     
-    .template-wave .cover-type-badge { background: #D81B60; color: white; border: none; font-size: 14pt; padding: 6px 32px; margin: 15px 0; border-radius: 50px; font-weight: bold; display: inline-block; }
-    .template-wave .cover-title { color: #111; font-size: 14pt; font-weight: bold; font-style: italic; margin-bottom: 25px; }
+    .template-wave .cover-type-badge { background: #D81B60; color: white; border: none; font-size: 13pt; padding: 6px 30px; margin: 10px 0; border-radius: 50px; font-weight: bold; display: inline-block; }
+    .template-wave .cover-title { color: #111; font-size: 13pt; font-weight: bold; font-style: italic; margin-bottom: 15px; }
     
-        /* Classic Center Table Design (Fixed Layout) */
-    .template-wave .cover-table { font-family: 'Times New Roman', serif; width: 100%; table-layout: fixed; border: none; margin-bottom: 10px; }
-    .template-wave .cover-table th { background: transparent; color: #111; border-bottom: 2px solid #D81B60; padding: 8px 0; font-size: 13pt; text-align: center; }
-    .template-wave .cover-table td { border: none; padding-top: 15px; text-align: left; vertical-align: top; }
+    /* Table Design */
+    .template-wave .cover-table { font-family: 'Times New Roman', serif; width: 100%; table-layout: fixed; border: none; margin-bottom: 15px; }
+    .template-wave .cover-table th { background: transparent; color: #111; border-bottom: 2px solid #D81B60; padding: 6px 0; font-size: 12pt; text-align: center; }
+    .template-wave .cover-table td { border: none; padding-top: 10px; text-align: left; vertical-align: top; line-height: 1.4; } /* স্পেসিং ফিক্স করা হয়েছে */
     
-    /* Date of Submission - Forced to stay at bottom */
-    .template-wave .cover-date { display: block; clear: both; width: 100%; text-align: center; color: #333; font-size: 12pt; font-weight: bold; margin-top: 40px; margin-bottom: 40px; }
-
-    
-    .template-wave .cover-date { color: #333; font-size: 12pt; font-weight: bold; margin-top: 20px; margin-bottom: 40px;}
+    /* Date stays at the bottom */
+    .template-wave .cover-date { display: block; clear: both; width: 100%; text-align: center; color: #333; font-size: 12pt; font-weight: bold; margin-top: 20px; }
 
 
 /* DESIGN 6: NUBTK Gold Arc (Light & Minimal) - INSPIRED BY NEW IMAGE 1000228421.jpg */
