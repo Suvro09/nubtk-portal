@@ -44,17 +44,13 @@
       font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
 
-    /* RIGHT SIDE: PREVIEW STYLES & MOBILE SCALING */
-    .preview-panel {
-      background: #e5e5e5; border-radius: 12px;
-      display: flex; flex-direction: column; align-items: center;
-      width: 100%; max-width: 100%; overflow: hidden; /* 📱 Mobile constraint */
-    }
+   /* RIGHT SIDE: PREVIEW STYLES & MOBILE SCALING */
+    .preview-panel { width: 100%; max-width: 100%; overflow: hidden; }
+    
     .preview-scale-outer {
-      padding: 30px 0; width: 100%;
+      background: #e5e5e5; padding: 28px 0; border-radius: 12px;
       display: flex; justify-content: center; align-items: flex-start;
-      overflow: hidden; /* বাইরে যেন না যায় */
-      transition: height 0.3s ease;
+      overflow: hidden; transition: height 0.3s ease; width: 100%;
     }
     
     #pdf-wrapper { 
@@ -65,34 +61,23 @@
 
     /* A4 PAGE DESIGN */
     .a4-page {
-      background: white; color: #111;
-      width: 794px; height: 1120px; /* একদম নিখুঁত A4 সাইজ */
+      background: white; color: #111; width: 794px; height: 1120px; 
       padding: 80px 70px; box-sizing: border-box;
-      font-family: 'Times New Roman', serif;
-      position: relative; border: 2px solid #111; /* চারদিকে বর্ডার */
-      page-break-after: always;
+      font-family: 'Times New Roman', serif; position: relative; 
+      border: 2px solid #111; page-break-after: always;
     }
-    .a4-page:last-child { page-break-after: auto; } /* শেষের পেজে ব্রেক হবে না */
+    .a4-page:last-child { page-break-after: auto; }
     
-    /* Titles (Logo Removed) */
     .idx-main-title { text-align: center; font-size: 32pt; font-weight: bold; text-decoration: underline; margin-bottom: 25px; }
     .idx-sub-title { text-align: center; font-size: 16pt; font-weight: bold; margin-bottom: 30px; color: #333; }
     
-    /* Table Design */
+    /* Table Design - প্যাডিং কমানো হয়েছে */
     .idx-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .idx-table th {
-      border: 2px solid #111; padding: 15px 8px;
-      font-size: 15pt; font-weight: bold; text-align: center;
-      background: #f8f9fa;
-    }
-    .idx-table td {
-      border: 2px solid #111; padding: 15px 10px;
-      font-size: 14pt; height: 75px; /* একটু বড় করা হলো যাতে পেজ ভরে থাকে */
-    }
+    .idx-table th { border: 2px solid #111; padding: 10px 8px; font-size: 14pt; font-weight: bold; text-align: center; background: #f8f9fa; }
+    .idx-table td { border: 2px solid #111; padding: 12px 10px; font-size: 13pt; height: 50px; } /* Height & Padding reduced */
     .idx-table td.center { text-align: center; }
     .idx-table td.left { text-align: left; vertical-align: middle; }
     
-    /* Page Number */
     .page-num { position: absolute; bottom: 30px; right: 70px; font-size: 12pt; font-weight: bold; }
   </style>
 </head>
@@ -156,14 +141,15 @@
     const wrapper = document.getElementById('pdf-wrapper');
     if (!outer || !wrapper) return;
     
-    // 📱 স্ক্রিনের আসল সাইজ মেপে স্কেল করা হচ্ছে
-    const availableWidth = Math.min(outer.clientWidth, window.innerWidth - 40); 
+    // Cover Page এর মতো দুই পাশে ফাঁকা জায়গা রাখার জন্য 40px বাদ দেওয়া হলো
+    const availableWidth = outer.clientWidth - 40; 
     const originalWidth = 794; 
     
     if (availableWidth < originalWidth) {
       const scale = availableWidth / originalWidth;
       wrapper.style.transform = `scale(${scale})`;
-      // হাইট ক্যালকুলেট করা (যতগুলো পেজ আছে তার ওপর ভিত্তি করে)
+      
+      // হাইট ক্যালকুলেট করা
       const totalPages = Math.ceil(Math.max(indexRows.length, 1) / ROWS_PER_PAGE);
       outer.style.height = `${(1120 * totalPages * scale) + 60}px`; 
     } else {
