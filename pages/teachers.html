@@ -1,1 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher's Directory - NUBTK</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-database-compat.js"></script>
+  
+  <style>
+    /* CSS Variables matching your NUBTK portal */
+    :root {
+      --bg-dark: #0B1D3A;
+      --card-bg: #112b56;
+      --gold: #C9A84C;
+      --text-light: #f0f0f0;
+      --muted: #a0aec0;
+    }
+    
+    body { 
+      margin: 0; 
+      font-family: 'DM Sans', sans-serif; 
+      background: var(--bg-dark); 
+      color: var(--text-light); 
+    }
+    
+    .header { text-align: center; padding: 40px 20px 20px; }
+    .header h1 { color: var(--gold); margin: 0 0 10px 0; font-size: 2rem; }
+    
+    /* Search Bar Styling */
+    .search-container { text-align: center; margin-bottom: 30px; padding: 0 20px;}
+    .search-bar { 
+      width: 100%; max-width: 500px; padding: 14px 24px; 
+      border-radius: 50px; border: 2px solid rgba(201,168,76,0.5); 
+      background: rgba(255,255,255,0.05); color: white; 
+      font-size: 1rem; outline: none; transition: 0.3s;
+    }
+    .search-bar:focus { border-color: var(--gold); background: rgba(255,255,255,0.1); }
+    .search-bar::placeholder { color: var(--muted); }
+    
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+    
+    /* Grid Layout for Profile Cards */
+    .grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+      gap: 25px; 
+    }
+    
+    /* Teacher Card Styling */
+    .t-card { 
+      background: var(--card-bg); 
+      border: 1px solid rgba(255,255,255,0.05); 
+      border-radius: 16px; 
+      padding: 30px 20px; 
+      text-align: center; 
+      transition: all 0.3s ease; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .t-card:hover { 
+      transform: translateY(-8px); 
+      border-color: var(--gold); 
+      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    }
+    
+    .t-img { 
+      width: 110px; height: 110px; 
+      border-radius: 50%; object-fit: cover; 
+      border: 3px solid var(--gold); 
+      margin-bottom: 15px; background: white;
+    }
+    
+    .t-name { font-size: 1.25rem; font-weight: bold; color: var(--gold); margin-bottom: 4px; }
+    .t-desig { font-size: 1rem; font-weight: 600; color: white; margin-bottom: 2px; }
+    .t-dept { font-size: 0.85rem; color: var(--muted); margin-bottom: 18px; text-transform: uppercase; letter-spacing: 1px;}
+    
+    .t-contact { 
+      font-size: 0.9rem; color: #ddd; 
+      background: rgba(0,0,0,0.25); 
+      padding: 12px; border-radius: 10px; 
+      word-break: break-all;
+    }
+    .t-contact div { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0; }
+  </style>
+</head>
+<body>
 
+  <div class="header">
+    <h1>👨‍🏫 Teacher's Directory</h1>
+    <p style="color:var(--muted); font-size: 1.1rem;">Find your respected faculty members and contact info easily.</p>
+  </div>
+
+  <div class="search-container">
+    <input type="text" id="search-input" class="search-bar" placeholder="🔍 Search by name, department or designation..." onkeyup="filterTeachers()">
+  </div>
+
+  <div class="container">
+    <div class="grid" id="teachers-grid">
+      <div style="text-align:center; color:var(--muted); grid-column: 1 / -1; padding: 40px; font-size: 1.1rem;">
+        ⏳ Loading directory from Live Database...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── FIREBASE SETUP ───
+    const firebaseConfig = {
+      apiKey: "AIzaSyCF9BoDxWa-0XTwbCBxjHrrBdQrKioJua8",
+      authDomain: "nubtk-portal.firebaseapp.com",
+      databaseURL: "https://nubtk-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "nubtk-portal",
+      storageBucket: "nubtk-portal.firebasestorage.app",
+      messagingSenderId: "45891604739",
+      appId: "1:45891604739:web:33251f784080f09816d936"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let allTeachers = []; // সব টিচারের ডেটা এখানে স্টোর হবে
+
+    // ফায়ারবেস থেকে লাইভ ডেটা আনা হচ্ছে
+    db.ref('teachers').on('value', (snapshot) => {
+      const data = snapshot.val() || {};
+      allTeachers = Object.values(data);
+      renderTeachers(allTeachers);
+    });
+
+    // টিচারদের কার্ড রেন্ডার করার ফাংশন
+    function renderTeachers(list) {
+      const grid = document.getElementById('teachers-grid');
+      
+      if(list.length === 0) {
+        grid.innerHTML = '<div style="text-align:center; color:var(--muted); grid-column: 1 / -1; padding: 40px; font-size:1.1rem;">No teachers found in the directory.</div>';
+        return;
+      }
+      
+      grid.innerHTML = list.map(t => {
+        // যদি ছবি না থাকে, তাহলে একটি ডিফল্ট ইমোজি অ্যাভাটার দেখাবে
+        const imgStr = t.image ? t.image : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="110" height="110"><rect width="110" height="110" fill="%23222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23fff" font-family="sans-serif" font-size="45">🧑‍🏫</text></svg>';
+        
+        return `
+          <div class="t-card">
+            <img src="${imgStr}" class="t-img" alt="Photo">
+            <div class="t-name">${t.name}</div>
+            <div class="t-desig">${t.designation}</div>
+            <div class="t-dept">Dept. of ${t.dept}</div>
+            
+            ${(t.email || t.phone) ? `
+            <div class="t-contact">
+              ${t.email ? `<div>📧 <span>${t.email}</span></div>` : ''}
+              ${t.phone ? `<div>📞 <span>${t.phone}</span></div>` : ''}
+            </div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // সার্চ ফিল্টার লজিক
+    function filterTeachers() {
+      const query = document.getElementById('search-input').value.toLowerCase();
+      const filtered = allTeachers.filter(t => 
+        (t.name && t.name.toLowerCase().includes(query)) || 
+        (t.dept && t.dept.toLowerCase().includes(query)) || 
+        (t.designation && t.designation.toLowerCase().includes(query))
+      );
+      renderTeachers(filtered);
+    }
+  </script>
+</body>
+</html>
