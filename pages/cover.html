@@ -261,6 +261,23 @@
       transform-origin: top center; /* To shrink the page right from the middleয */
     }
 
+    /* AUTO-SUGGEST BOX STYLING */
+    .suggest-box {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: var(--navy2, #112244); border: 1px solid var(--gold, #C9A84C);
+      border-radius: 8px; margin-top: 4px; z-index: 100;
+      max-height: 200px; overflow-y: auto; display: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .suggest-item {
+      padding: 10px 14px; cursor: pointer; color: #fff; font-size: 0.95rem;
+      border-bottom: 1px solid rgba(255,255,255,0.05); transition: 0.2s;
+    }
+    .suggest-item:last-child { border-bottom: none; }
+    .suggest-item:hover { background: rgba(201,168,76,0.15); color: var(--gold, #C9A84C); }
+    .suggest-acro { font-size: 0.75rem; color: #bbb; margin-left: 6px; }
+    .suggest-meta { display: block; font-size: 0.8rem; color: #8A99B3; margin-top: 3px; }
+
     /* SAVED LIST */
     .saved-item {
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
@@ -454,21 +471,102 @@ function renderFields() {
   setupAutoDesignation();
 }
 
-// ─── AUTO UPDATE DESIGNATION LOGIC ───────────
+// ─── TEACHERS LIVE DATA FETCH & AUTO-SUGGEST ───
+let liveTeacherList = [];
+
+// ফায়ারবেস থেকে লাইভ টিচারদের ডেটা আনা
+db.ref('teachers').on('value', (snapshot) => {
+  const data = snapshot.val() || {};
+  liveTeacherList = Object.values(data);
+});
+
 function setupAutoDesignation() {
-  const nameInput = document.getElementById('field_teacherName');
-  const desigSelect = document.getElementById('field_teacherDesig');
+  const allLabels = document.querySelectorAll('.form-label');
+  let nameInput = null;
+  let desigSelect = null;
+
+  // ফিল্ডগুলো খুঁজে বের করা
+  allLabels.forEach(lbl => {
+    const text = lbl.innerText.toLowerCase();
+    if (text.includes("teacher's name") || text.includes("teacher name")) {
+      nameInput = lbl.parentElement.querySelector('input');
+      // বক্স যেন ইনপুটের ঠিক নিচেই থাকে, তাই parent কে relative করা হলো
+      lbl.parentElement.style.position = 'relative'; 
+    }
+    if (text.includes("designation")) {
+      desigSelect = lbl.parentElement.querySelector('select');
+    }
+  });
 
   if (!nameInput || !desigSelect) return;
 
-  // ফায়ারবেস থেকে পাওয়া টিচারদের ডেটা, না থাকলে এই ডিফল্ট লিস্ট কাজ করবে
-  const savedMap = JSON.parse(localStorage.getItem('nubtk_teachers_map') || 'null');
-  const teacherMap = savedMap || {
-    "Hitesh Roy": "Lecturer",
-    "Namoon Nahar Naz": "Lecturer",
-    "Md. Hasibul Islam": "Assistant Professor",
-    "Dr.": "Professor" // নামের শুরুতে Dr. থাকলে প্রফেসর সিলেক্ট হবে
-  };
+  // Suggestion Box তৈরি করা (যদি আগে থেকে না থাকে)
+  let suggestBox = document.getElementById('t-suggest-box');
+  if (!suggestBox) {
+    suggestBox = document.createElement('div');
+    suggestBox.id = 't-suggest-box';
+    suggestBox.className = 'suggest-box';
+    nameInput.parentElement.appendChild(suggestBox);
+  }
+
+  // স্টুডেন্ট যখন টাইপ করবে, তখন এই কোডটি কাজ করবে
+  nameInput.addEventListener('input', function() {
+    const query = this.value.trim().toLowerCase();
+    suggestBox.innerHTML = ''; // আগের রেজাল্ট ক্লিয়ার করা
+    
+    // ১টা বা ২টা ক্যারেক্টার লিখলেই সাজেস্ট করবে
+    if (query.length < 1) {
+      suggestBox.style.display = 'none';
+      return;
+    }
+
+    // টাইপ করা অক্ষরের সাথে টিচারদের নাম মেলানো
+    const matchedTeachers = liveTeacherList.filter(t => {
+      const tName = (t.name || '').toLowerCase();
+      const tAcro = (t.acronym || '').toLowerCase();
+      // নাম অথবা শর্টনেম দুইটা দিয়েই খোঁজা যাবে
+      return tName.includes(query) || (tAcro && tAcro.includes(query));
+    });
+
+    if (matchedTeachers.length === 0) {
+      suggestBox.style.display = 'none';
+      return;
+    }
+
+    // মিলে যাওয়া টিচারদের লিস্ট বক্সে দেখানো
+    matchedTeachers.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'suggest-item';
+      
+      const acroText = t.acronym ? `<span class="suggest-acro">(${t.acronym})</span>` : '';
+      item.innerHTML = `<strong>${t.name}</strong> ${acroText}<span class="suggest-meta">${t.designation} • Dept. of ${t.dept}</span>`;
+      
+      // নামের ওপর ক্লিক করলে অটো ফিলাপ হবে
+      item.addEventListener('click', function() {
+        nameInput.value = t.name;
+        
+        // Designation অটো-সিলেক্ট করা
+        const optionExists = Array.from(desigSelect.options).some(opt => opt.value === t.designation);
+        if (optionExists) {
+          desigSelect.value = t.designation;
+        }
+        
+        suggestBox.style.display = 'none'; // কাজ শেষ, বক্স হাইড
+      });
+      
+      suggestBox.appendChild(item);
+    });
+    
+    suggestBox.style.display = 'block'; // বক্স শো করা
+  });
+
+  // স্ক্রিনের অন্য কোথাও ক্লিক করলে যেন সাজেস্ট বক্সটা লুকিয়ে যায়
+  document.addEventListener('click', function(e) {
+    if (e.target !== nameInput && !suggestBox.contains(e.target)) {
+      suggestBox.style.display = 'none';
+    }
+  });
+}
 
   nameInput.addEventListener('input', function() {
     const typedName = this.value.trim().toLowerCase();
