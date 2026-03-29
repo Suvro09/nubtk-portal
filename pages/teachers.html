@@ -131,7 +131,7 @@
       renderTeachers(allTeachers);
     });
 
-    // টিচারদের কার্ড রেন্ডার করার ফাংশন
+    // টিচারদের কার্ড রেন্ডার করার ফাংশন (Acronym ব্যাজ সহ)
     function renderTeachers(list) {
       const grid = document.getElementById('teachers-grid');
       
@@ -141,18 +141,22 @@
       }
       
       grid.innerHTML = list.map(t => {
-        // ইমেজ হ্যান্ডলিং: ডাটাবেস থেকে আসা জেন্ডার অনুযায়ী ভেক্টর বসবে
         let finalImage = t.image;
         if (!finalImage) {
           finalImage = (t.gender === 'female') ? femaleAvatar : maleAvatar;
         }
+        
+        // Acronym থাকলে নামের পাশে সুন্দর গোল্ডেন ব্যাজ হিসেবে দেখাবে
+        const acroBadge = t.acronym ? `<span style="background:var(--gold); color:var(--bg-dark); font-size:0.8rem; padding:2px 8px; border-radius:12px; font-weight:900; margin-left:8px; vertical-align:middle;">${t.acronym}</span>` : '';
         
         return `
           <div class="t-card">
             <div style="background: white; width: 110px; height: 110px; border-radius: 50%; border: 3px solid var(--gold); margin: 0 auto 15px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
                 <img src="${finalImage}" style="width:100%; height:100%; object-fit:cover;" alt="Profile Photo">
             </div>
-            <div class="t-name">${t.name}</div>
+            <div class="t-name" style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:5px;">
+              ${t.name} ${acroBadge}
+            </div>
             <div class="t-desig">${t.designation}</div>
             <div class="t-dept">Dept. of ${t.dept}</div>
             
@@ -166,11 +170,12 @@
       }).join('');
     }
 
-    // সার্চ ফিল্টার লজিক
+    // সার্চ ফিল্টার লজিক (এখন স্টুডেন্টরা Acronym দিয়েও সার্চ করতে পারবে)
     function filterTeachers() {
       const query = document.getElementById('search-input').value.toLowerCase();
       const filtered = allTeachers.filter(t => 
         (t.name && t.name.toLowerCase().includes(query)) || 
+        (t.acronym && t.acronym.toLowerCase().includes(query)) || // Acronym দিয়ে সার্চ সাপোর্ট যোগ করা হলো
         (t.dept && t.dept.toLowerCase().includes(query)) || 
         (t.designation && t.designation.toLowerCase().includes(query))
       );
