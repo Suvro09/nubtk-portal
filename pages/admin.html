@@ -663,6 +663,10 @@ function renderFieldsEditor() {
             <option value="date" ${f.type==='date'?'selected':''}>Date Picker</option>
           </select>
         </div>
+        <div style="flex:1; min-width:130px;">
+          <label style="font-size:0.8rem; color:var(--muted); display:block; margin-bottom:4px;">Placeholder</label>
+          <input type="text" class="form-input" value="${f.placeholder || ''}" placeholder="e.g. Type here..." onchange="updateField(${i}, 'placeholder', this.value)" style="padding:8px; font-size:0.9rem;"/>
+        </div>
         <div style="width:90px; padding-bottom:8px;">
           <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.85rem; color:var(--gold);">
             <input type="checkbox" ${f.required ? 'checked' : ''} onchange="updateField(${i}, 'required', this.checked)"> Required
@@ -708,7 +712,7 @@ function removeField(i) {
   renderFieldsEditor();
 }
 function addField() {
-  adminFields.push({ id: 'custom_'+Date.now(), label: 'New Field', type: 'text', required: false });
+  adminFields.push({ id: 'custom_'+Date.now(), label: 'New Field', type: 'text', required: false , placeholder: ''});
   renderFieldsEditor();
 }
 function updateOption(fIdx, optIdx, val) {
