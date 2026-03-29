@@ -119,25 +119,10 @@
 
     let allTeachers = []; 
 
-    // ─── DEFAULT VECTOR AVATARS (Fixed Quotes Issue) ───
-    // Male Vector Avatar (Golden Theme)
+    // ─── DEFAULT VECTOR AVATARS ───
     const maleAvatar = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23C9A84C'%3E%3Cpath d='M12,2C9.79,2 8,3.79 8,6C8,8.21 9.79,10 12,10C14.21,10 16,8.21 16,6C16,3.79 14.21,2 12,2M12,11C9.33,11 4,12.34 4,15V18H9.37C9.13,17.39 9,16.71 9,16V13.8L12,18.3L15,13.8V16C15,16.71 14.87,17.39 14.63,18H20V15C20,12.34 14.67,11 12,11Z'/%3E%3C/svg%3E";
     
-    // Female Vector Avatar (Golden Theme)
     const femaleAvatar = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23C9A84C'%3E%3Cpath d='M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z'/%3E%3C/svg%3E";
-
-    // ─── AUTO GENDER DETECTION LOGIC ───
-    function getGender(name) {
-      if(!name) return 'male';
-      const n = name.toLowerCase();
-      // Female নামের কমন অংশগুলো
-      const femaleKeywords = ['mst', 'mrs', 'miss', 'ms.', 'begum', 'khatun', 'nahar', 'jahan', 'akter', 'akther', 'sultana', 'yasmin', 'naz', 'farzana', 'sadia', 'tania'];
-      
-      for(let w of femaleKeywords) {
-        if(n.includes(w)) return 'female';
-      }
-      return 'male'; // ডিফল্ট হিসেবে Male
-    }
 
     // ফায়ারবেস থেকে লাইভ ডেটা আনা হচ্ছে
     db.ref('teachers').on('value', (snapshot) => {
@@ -156,11 +141,10 @@
       }
       
       grid.innerHTML = list.map(t => {
-        // ইমেজ হ্যান্ডলিং: আপলোড করা ছবি না থাকলে জেন্ডার অনুযায়ী ভেক্টর বসবে
+        // ইমেজ হ্যান্ডলিং: ডাটাবেস থেকে আসা জেন্ডার অনুযায়ী ভেক্টর বসবে
         let finalImage = t.image;
         if (!finalImage) {
-          const gender = getGender(t.name);
-          finalImage = gender === 'female' ? femaleAvatar : maleAvatar;
+          finalImage = (t.gender === 'female') ? femaleAvatar : maleAvatar;
         }
         
         return `
