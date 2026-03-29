@@ -937,7 +937,7 @@ function saveStudentsToFirebase() {
   
   notify('⏳ Saving to Live Database...');
   
-  db.ref('students').set(extractedStudents)
+  db.ref('students').update(extractedStudents)
     .then(() => {
       notify('✅ Students successfully saved to Live DB!');
     })
