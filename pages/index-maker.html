@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Index Maker — NUBTK Portal</title>
+  <link rel="stylesheet" href="../css/main.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    /* PAGE LAYOUT STYLES */
+    .app-container {
+      max-width: 1400px; margin: 0 auto; padding: 20px;
+      display: grid; grid-template-columns: 400px 1fr; gap: 30px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .app-container { grid-template-columns: 1fr; }
+    }
+
+    /* LEFT SIDE: FORM STYLES */
+    .form-panel {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px;
+      position: sticky; top: 100px;
+    }
+    .row-item {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 8px; padding: 12px; margin-bottom: 12px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: relative;
+    }
+    .row-item .full-width { grid-column: 1 / -1; }
+    .remove-btn {
+      position: absolute; top: -10px; right: -10px;
+      background: #ef4444; color: white; border: none;
+      width: 24px; height: 24px; border-radius: 50%;
+      font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* RIGHT SIDE: PREVIEW STYLES */
+    .preview-panel {
+      background: #e5e5e5; padding: 30px; border-radius: 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 20px;
+      overflow-x: auto;
+    }
+    
+    /* A4 PAGE DESIGN */
+    .a4-page {
+      background: white; color: #111;
+      width: 794px; height: 1120px; 
+      padding: 50px 60px; box-sizing: border-box;
+      font-family: 'Times New Roman', serif;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+      position: relative; border: 4px solid #111;
+      flex-shrink: 0; page-break-after: always;
+    }
+    
+    /* Header Area */
+    .idx-header { text-align: center; border-bottom: 3px solid #111; padding-bottom: 15px; margin-bottom: 20px; }
+    .idx-logo { width: 100px; height: 100px; object-fit: contain; margin-bottom: 10px; }
+    .idx-uni { font-size: 20pt; font-weight: 900; color: #0B1D3A; letter-spacing: 1px; }
+    
+    /* Titles */
+    .idx-main-title { text-align: center; font-size: 24pt; font-weight: bold; text-decoration: underline; margin: 25px 0; }
+    .idx-sub-title { text-align: center; font-size: 14pt; font-weight: bold; margin-bottom: 20px; color: #333; }
+    
+    /* Table Design */
+    .idx-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .idx-table th {
+      border: 2px solid #111; padding: 12px 8px;
+      font-size: 14pt; font-weight: bold; text-align: center;
+      background: #f8f9fa;
+    }
+    .idx-table td {
+      border: 2px solid #111; padding: 15px 10px;
+      font-size: 13pt; height: 65px; /* Fixed height for consistent look */
+    }
+    .idx-table td.center { text-align: center; }
+    .idx-table td.left { text-align: left; vertical-align: middle; }
+    
+    /* Page Number */
+    .page-num { position: absolute; bottom: 20px; right: 60px; font-size: 11pt; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap" style="padding-bottom:60px;">
+  <div class="page-header">
+    <div class="breadcrumb"><a href="../index.html">Home</a> › Index Maker</div>
+    <h1>Index Maker</h1>
+    <p>Create professional multi-page Index for your Lab Reports and Assignments.</p>
+  </div>
+
+  <div class="app-container">
+    
+    <div class="form-panel">
+      <h2 style="font-family: var(--ff-head); color: var(--gold); margin-bottom: 20px; font-size: 1.5rem;">Index Details</h2>
+      
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label class="form-label">Optional Title (Subject/Lab Name)</label>
+        <input type="text" id="opt-title" class="form-input" placeholder="e.g. Physics Lab Report" onkeyup="renderPreview()">
+      </div>
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+        <label class="form-label" style="margin:0;">Index Entries</label>
+        <button class="btn btn-outline" style="padding: 4px 10px; font-size: 0.75rem;" onclick="addRow()">+ Add Row</button>
+      </div>
+
+      <div id="rows-container">
+        </div>
+      
+      <div class="btn-row" style="margin-top: 20px;">
+        <button class="btn btn-gold" style="width: 100%; justify-content:center;" onclick="downloadPDF()">⬇️ Download PDF</button>
+        <button class="btn btn-outline" style="width: 100%; justify-content:center;" onclick="saveDraft()">💾 Save Draft</button>
+        <button class="btn btn-danger" style="width: 100%; justify-content:center; color: #ef4444;" onclick="resetForm()">↺ Reset All</button>
+      </div>
+    </div>
+
+    <div class="preview-panel">
+      <div id="pdf-wrapper" style="display: flex; flex-direction: column; gap: 20px;">
+        </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+  // ─── UTILS ───
+  function notify(msg, dur=2800) {
+    const n = document.getElementById('notif');
+    n.textContent = msg; n.classList.add('show');
+    setTimeout(() => n.classList.remove('show'), dur);
+  }
+
+  // ─── STATE MANAGEMENT ───
+  let indexRows = [
+    { sr: '1', name: '', date: '', page: '' },
+    { sr: '2', name: '', date: '', page: '' },
+    { sr: '3', name: '', date: '', page: '' }
+  ];
+  const ROWS_PER_PAGE = 7; // প্রতি পেজে সর্বোচ্চ ৭টা ইনডেক্স
+
+  // লোকাল স্টোরেজ থেকে ডাটা লোড করা
+  function loadDraft() {
+    const saved = localStorage.getItem('nubtk_index_draft');
+    const savedTitle = localStorage.getItem('nubtk_index_title');
+    if (saved) indexRows = JSON.parse(saved);
+    if (savedTitle) document.getElementById('opt-title').value = savedTitle;
+    renderInputs();
+  }
+
+  // ড্রাফট সেভ করা
+  function saveDraft() {
+    localStorage.setItem('nubtk_index_draft', JSON.stringify(indexRows));
+    localStorage.setItem('nubtk_index_title', document.getElementById('opt-title').value);
+    notify('✅ Index saved to Draft!');
+  }
+
+  function resetForm() {
+    if(confirm('Are you sure you want to clear everything?')) {
+      localStorage.removeItem('nubtk_index_draft');
+      localStorage.removeItem('nubtk_index_title');
+      document.getElementById('opt-title').value = '';
+      indexRows = [ { sr: '1', name: '', date: '', page: '' }, { sr: '2', name: '', date: '', page: '' }, { sr: '3', name: '', date: '', page: '' } ];
+      renderInputs();
+      notify('↺ Form Reset');
+    }
+  }
+
+  // ─── FORM RENDERING ───
+  function renderInputs() {
+    const container = document.getElementById('rows-container');
+    container.innerHTML = indexRows.map((row, i) => `
+      <div class="row-item">
+        ${indexRows.length > 1 ? `<button class="remove-btn" onclick="removeRow(${i})">✕</button>` : ''}
+        <div style="grid-column: 1/2;">
+          <input type="text" class="form-input" placeholder="Sr No (e.g. ${i+1})" value="${row.sr}" onkeyup="updateRow(${i}, 'sr', this.value)">
+        </div>
+        <div style="grid-column: 2/3;">
+          <input type="text" class="form-input" placeholder="Page (e.g. 1-3)" value="${row.page}" onkeyup="updateRow(${i}, 'page', this.value)">
+        </div>
+        <div class="full-width">
+          <input type="text" class="form-input" placeholder="Index / Assignment Name" value="${row.name}" onkeyup="updateRow(${i}, 'name', this.value)">
+        </div>
+        <div class="full-width">
+          <input type="date" class="form-input" value="${row.date}" onchange="updateRow(${i}, 'date', this.value)">
+        </div>
+      </div>
+    `).join('');
+    
+    renderPreview();
+  }
+
+  function addRow() {
+    const nextSr = indexRows.length > 0 ? (parseInt(indexRows[indexRows.length-1].sr) || indexRows.length) + 1 : 1;
+    indexRows.push({ sr: nextSr.toString(), name: '', date: '', page: '' });
+    renderInputs();
+  }
+
+  function removeRow(index) {
+    indexRows.splice(index, 1);
+    renderInputs();
+  }
+
+  function updateRow(index, field, value) {
+    indexRows[index][field] = value;
+    renderPreview(); // টাইপ করার সাথে সাথে প্রিভিউ আপডেট হবে
+  }
+
+  // ─── PREVIEW RENDERING (PAGINATION MAGIC) ───
+  function renderPreview() {
+    const optTitle = document.getElementById('opt-title').value.trim();
+    const wrapper = document.getElementById('pdf-wrapper');
+    
+    // Admin Panel থেকে লোগো আনা (যদি থাকে), নাহলে ডিফল্ট লোগো
+    const config = JSON.parse(localStorage.getItem('nubtk_cover_config') || '{}');
+    const defaultLogo = "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#0B1D3A" stroke="#ccc" stroke-width="1.5"/><text x="32" y="38" font-size="11" font-family="serif" font-weight="bold" text-anchor="middle" fill="white">NUBTK</text></svg>`);
+    const logoSrc = (config.logoOptions && config.logoOptions.length > 0) ? config.logoOptions[0] : defaultLogo;
+
+    // ডাটাগুলোকে ৭টি করে ভাগে (chunks) ভাগ করা
+    const chunks = [];
+    for (let i = 0; i < Math.max(indexRows.length, 1); i += ROWS_PER_PAGE) {
+      chunks.push(indexRows.slice(i, i + ROWS_PER_PAGE));
+    }
+
+    wrapper.innerHTML = chunks.map((chunk, pageIndex) => {
+      // যদি ৭টা ফিল্ড পূরণ না হয়, তবে ফাঁকা <tr> দিয়ে টেবিল সুন্দর রাখা হবে
+      let tableRows = '';
+      for(let i = 0; i < ROWS_PER_PAGE; i++) {
+        const row = chunk[i] || { sr: '', name: '', date: '', page: '' };
+        
+        // Date Format: YYYY-MM-DD to DD/MM/YYYY
+        let formattedDate = '';
+        if(row.date) {
+            const d = new Date(row.date);
+            formattedDate = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+        }
+
+        tableRows += `
+          <tr>
+            <td class="center">${row.sr}</td>
+            <td class="left">${row.name}</td>
+            <td class="center">${formattedDate}</td>
+            <td class="center">${row.page}</td>
+          </tr>
+        `;
+      }
+
+      return `
+        <div class="a4-page">
+          <div class="idx-header">
+            <img src="${logoSrc}" class="idx-logo" alt="Logo">
+            <div class="idx-uni">NORTHERN UNIVERSITY OF BUSINESS & TECHNOLOGY KHULNA</div>
+          </div>
+          
+          <div class="idx-main-title">Index</div>
+          ${optTitle ? `<div class="idx-sub-title">${optTitle}</div>` : ''}
+
+          <table class="idx-table">
+            <thead>
+              <tr>
+                <th style="width: 12%;">Sr no.</th>
+                <th style="width: 53%;">Index Name / Assignment</th>
+                <th style="width: 17%;">Date</th>
+                <th style="width: 18%;">No. of Page</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+          
+          <div class="page-num">Page ${pageIndex + 1} of ${chunks.length}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ─── PDF EXPORT ───
+  function downloadPDF() {
+    const element = document.getElementById('pdf-wrapper');
+    notify('⏳ Generating PDF. Please wait...');
+    
+    // html2pdf অপশন সেটআপ
+    const opt = {
+      margin:       0,
+      filename:     'NUBTK_Index_Page.pdf',
+      image:        { type: 'jpeg', quality: 1 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'px', format: [794, 1120], orientation: 'portrait' }
+    };
+
+    // pdf-wrapper এর ভেতরের সব পেজ একসাথে কনভার্ট হয়ে মাল্টি-পেজ PDF হবে
+    html2pdf().set(opt).from(element).save().then(() => {
+        notify('✅ PDF Downloaded Successfully!');
+    });
+  }
+
+  // Init
+  loadDraft();
+</script>
+
+<script src="../navbar.js"></script>
+</body>
+</html>
