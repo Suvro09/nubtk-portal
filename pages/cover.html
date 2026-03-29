@@ -283,22 +283,6 @@
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="nav-inner">
-    <div class="nav-brand">
-      <span class="brand-short">NUBTK</span>
-      <span class="brand-sep">·</span>
-      <span class="brand-full">Student Portal</span>
-    </div>
-    <div class="nav-links">
-      <a href="../index.html" class="nav-link">Home</a>
-      <a href="cover.html" class="nav-link active">Cover Page</a>
-      <a href="routine.html" class="nav-link">Routine</a>
-      <a href="admin.html" class="nav-link nav-admin">Admin</a>
-    </div>
-    <button class="nav-hamburger" onclick="toggleNav()">&#9776;</button>
-  </div>
-</nav>
 
 <div class="page-wrap" style="padding-bottom:60px;">
   <div class="page-header">
@@ -756,5 +740,6 @@ db.ref('settings').on('value', (snapshot) => {
 });
   
 </script>
+  <script src="../navbar.js"></script>
 </body>
 </html>
