@@ -482,6 +482,7 @@ function renderFields() {
 
   // ফিল্ডগুলো রেন্ডার হওয়ার পর অটো-আপডেট ফাংশন চালু করা হচ্ছে
   setupAutoDesignation();
+  setupAutoStudentInfo();
 }
 
 // ─── TEACHERS LIVE DATA FETCH & AUTO-SUGGEST ───
@@ -580,6 +581,54 @@ function setupAutoDesignation() {
     }
   });
 }
+
+  // ─── STUDENTS LIVE DATA FETCH & AUTO-FILL ───
+let liveStudentList = {};
+
+// ফায়ারবেস থেকে লাইভ স্টুডেন্টদের ডাটা আনা
+db.ref('students').on('value', (snapshot) => {
+  liveStudentList = snapshot.val() || {};
+});
+
+function setupAutoStudentInfo() {
+  const allLabels = document.querySelectorAll('.form-label');
+  let idInput = null;
+  let nameInput = null;
+
+  // ফিল্ডগুলো খুঁজে বের করা (যাতে অ্যাডমিন প্যানেল থেকে নাম বদলালেও কাজ করে)
+  allLabels.forEach(lbl => {
+    const text = lbl.innerText.toLowerCase();
+    
+    if (text === "student id" || text.includes("student id") || text === "id") {
+      idInput = lbl.parentElement.querySelector('input');
+    }
+    if (text === "student name" || text.includes("student name") || text.includes("your name")) {
+      nameInput = lbl.parentElement.querySelector('input');
+    }
+  });
+
+  if (!idInput || !nameInput) return;
+
+  // স্টুডেন্ট যখন ID টাইপ করবে, তখন এই কোডটি কাজ করবে
+  idInput.addEventListener('input', function() {
+    const typedId = this.value.trim();
+    
+    // যদি টাইপ করা ID ডাটাবেসে থাকে, তবে ম্যাজিকের মতো নাম বসে যাবে!
+    if (liveStudentList[typedId]) {
+      nameInput.value = liveStudentList[typedId];
+      
+      // অটো-ফিল হয়েছে সেটা বোঝানোর জন্য বক্সে হালকা গোল্ডেন কালারের ইফেক্ট
+      nameInput.style.borderColor = "var(--gold)";
+      nameInput.style.boxShadow = "0 0 8px rgba(201,168,76,0.3)";
+      
+      setTimeout(() => {
+        nameInput.style.borderColor = "";
+        nameInput.style.boxShadow = "";
+      }, 1500);
+    }
+  });
+}
+  
 
 function getDefaultLogos() {
   const makeLogoSVG = (text, color) =>
