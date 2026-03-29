@@ -209,6 +209,13 @@
             <input type="text" id="t-dept" class="form-input" placeholder="e.g. CSE">
           </div>
           <div>
+            <label style="font-size:0.8rem; color:var(--muted);">Gender *</label>
+            <select id="t-gender" class="form-input">
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div>
             <label style="font-size:0.8rem; color:var(--muted);">Email Address</label>
             <input type="email" id="t-email" class="form-input" placeholder="Teacher's Email">
           </div>
@@ -393,13 +400,14 @@ function saveNewTeacher() {
   const dept = document.getElementById('t-dept').value.trim();
   const email = document.getElementById('t-email').value.trim();
   const phone = document.getElementById('t-phone').value.trim();
+  const gender = document.getElementById('t-gender').value; // 🆕 জেন্ডার ভ্যালু নেওয়া হলো
 
   if(!name || !dept) { notify('⚠️ Name and Department are required!'); return; }
 
   notify('⏳ Saving to Database...');
   const newRef = db.ref('teachers').push();
   newRef.set({
-    name, designation: desig, dept, email, phone, image: tempTeacherImage
+    name, designation: desig, dept, email, phone, gender, image: tempTeacherImage
   }).then(() => {
     notify('✅ Teacher added successfully!');
     // ফর্ম ক্লিয়ার করা
@@ -407,6 +415,7 @@ function saveNewTeacher() {
     document.getElementById('t-dept').value = '';
     document.getElementById('t-email').value = '';
     document.getElementById('t-phone').value = '';
+    document.getElementById('t-gender').value = 'male'; // রিসেট
     document.getElementById('t-image').value = '';
     tempTeacherImage = '';
   }).catch(e => notify('❌ Failed to save teacher.'));
