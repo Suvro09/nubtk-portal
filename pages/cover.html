@@ -698,43 +698,43 @@ function renderPreview() {
   const logos = cfg.logoOptions && cfg.logoOptions.length > 0 ? cfg.logoOptions : getDefaultLogos();
   const logoSrc = (data.logoIdx !== null && data.logoIdx !== undefined) ? logos[data.logoIdx] : logos[0];
 
-  // 🧠 BULLETPROOF AUTO-DETECT LOGIC
+  // 🧠 SUPREME AUTO-DETECT LOGIC (Ignores old hidden draft data)
   const findVal = (exactId, strictLabels, looseKeywords = [], excludeKeywords = []) => {
-    // ধাপ ১: সবচেয়ে নিরাপদ উপায়—অরিজিনাল ID চেক করা
-    if (data[exactId] !== undefined) return data[exactId];
+    // ১. আগে চেক করবে এই Field টা বর্তমানে লাইভ অ্যাডমিন প্যানেলে আছে কি না
+    let targetField = cfg.fields.find(f => f.id === exactId);
+    if (targetField && data[targetField.id] !== undefined) return data[targetField.id];
 
-    // ধাপ ২: যদি অরিজিনাল ID না থাকে (অ্যাডমিন কাস্টম ফিল্ড বানালে), তবে লেবেল চেক করবে
-    const field = cfg.fields.find(f => {
+    // ২. যদি অরিজিনাল ID না থাকে, তবে লেবেল হুবহু মেলাবে (Exact Label Match)
+    targetField = cfg.fields.find(f => strictLabels.includes((f.label || '').toLowerCase().trim()));
+    if (targetField && data[targetField.id] !== undefined) return data[targetField.id];
+
+    // ৩. আংশিক ম্যাচ (Strict Partial Match) - Exclude কিওয়ার্ড থাকলে বাদ দেবে
+    targetField = cfg.fields.find(f => {
       const lbl = (f.label || '').toLowerCase().trim();
-      
-      // হুবহু মিলে গেলে (Exact Match)
-      if (strictLabels.includes(lbl)) return true;
-      
-      // আংশিক মিললে, তবে Exclude লিস্টের শব্দ থাকলে বাদ দেবে (Strict Partial Match)
       const match = looseKeywords.some(k => lbl.includes(k));
       const exclude = excludeKeywords.some(e => lbl.includes(e));
       return match && !exclude;
     });
-
-    if (field && data[field.id] !== undefined) return data[field.id];
-    return ''; // কিছুই না পেলে ফাঁকা রিটার্ন করবে
+    
+    if (targetField && data[targetField.id] !== undefined) return data[targetField.id];
+    return '';
   };
 
-  // 🛡️ অত্যন্ত সতর্কতার সাথে লেবেল ম্যাপিং (আপনার দেওয়া লজিক অনুযায়ী)
+  // 🛡️ অত্যন্ত সতর্কতার সাথে লেবেল ম্যাপিং
   const dept = findVal('dept', ['department', 'dept'], ['department'], ['teacher']);
   const courseTitle = findVal('courseTitle', ['course title', 'subject name'], ['course title', 'subject'], ['code', 'teacher']);
   const courseCode = findVal('courseCode', ['course code', 'subject code'], ['code'], ['title', 'name']);
-  const coverType = findVal('coverType', ['type', 'assignment type', 'report type'], [], ['file', 'submission', 'document']);
-  const coverTitle = findVal('coverTitle', ['title', 'topic'], ['topic'], ['course', 'job', 'subject', 'assignment type']);
+  const coverType = findVal('coverType', ['type', 'assignment type', 'report type'], [], ['file', 'submission']);
+  const coverTitle = findVal('coverTitle', ['title', 'topic'], ['topic'], ['course', 'subject']);
   
   const teacherName = findVal('teacherName', ['teacher name', "teacher's name", 'submitted to'], ['teacher', 'faculty'], ['designation']);
   const teacherDesig = findVal('teacherDesig', ['designation', "teacher's designation", 'teacher designation'], ['designation'], ['student']);
   
-  const studentName = findVal('studentName', ['student name', 'your name', 'submitted by', 'name'], ['student name', 'your name'], ['teacher', 'course', 'subject', 'university', 'father', 'mother']);
-  const studentId = findVal('studentId', ['student id', 'id', 'roll'], ['id', 'roll'], ['email', 'transaction', 'payment']);
+  const studentName = findVal('studentName', ['student name', 'your name', 'submitted by', 'name'], ['student name', 'your name'], ['teacher', 'course', 'subject', 'father', 'mother']);
+  const studentId = findVal('studentId', ['student id', 'id', 'roll'], ['id', 'roll'], ['email', 'transaction']);
   const section = findVal('section', ['section', 'batch'], ['section'], ['cross']);
   
-  let submissionDate = findVal('submissionDate', ['date of submission', 'submission date', 'date'], ['date'], ['birth']) || data.submissionDate || '';
+  let submissionDate = findVal('submissionDate', ['date of submission', 'submission date', 'date'], ['date'], ['birth']);
   if (submissionDate && !submissionDate.includes('/')) {
     const d = new Date(submissionDate);
     if (!isNaN(d)) submissionDate = d.toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric'});
@@ -786,6 +786,7 @@ function renderPreview() {
     <div class="cover-date">Date of Submission: ${submissionDate}</div>
   </div>`;
 }
+
 
 
 // ─── DOWNLOAD ───────────────────────────────
