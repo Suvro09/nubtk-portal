@@ -698,43 +698,49 @@ function renderPreview() {
   const logos = cfg.logoOptions && cfg.logoOptions.length > 0 ? cfg.logoOptions : getDefaultLogos();
   const logoSrc = (data.logoIdx !== null && data.logoIdx !== undefined) ? logos[data.logoIdx] : logos[0];
 
-  // 🧠 SUPREME AUTO-DETECT LOGIC (Ignores old hidden draft data)
+  // 🧠 ULTIMATE AUTO-DETECT LOGIC (Label Priority + Mutual Exclusion)
   const findVal = (exactId, strictLabels, looseKeywords = [], excludeKeywords = []) => {
-    // ১. আগে চেক করবে এই Field টা বর্তমানে লাইভ অ্যাডমিন প্যানেলে আছে কি না
-    let targetField = cfg.fields.find(f => f.id === exactId);
-    if (targetField && data[targetField.id] !== undefined) return data[targetField.id];
+    // ১. সবার আগে লেবেল চেক করবে (Exact & Strict Partial)
+    // কারণ অ্যাডমিন যদি পুরনো ID-র নাম বদলে অন্য কিছু রাখে, তাহলে ID চেক করলে ভুল ডাটা আসবে।
+    let targetField = cfg.fields.find(f => strictLabels.includes((f.label || '').toLowerCase().trim()));
+    if (targetField && data[targetField.id] !== undefined && data[targetField.id] !== '') return data[targetField.id];
 
-    // ২. যদি অরিজিনাল ID না থাকে, তবে লেবেল হুবহু মেলাবে (Exact Label Match)
-    targetField = cfg.fields.find(f => strictLabels.includes((f.label || '').toLowerCase().trim()));
-    if (targetField && data[targetField.id] !== undefined) return data[targetField.id];
-
-    // ৩. আংশিক ম্যাচ (Strict Partial Match) - Exclude কিওয়ার্ড থাকলে বাদ দেবে
     targetField = cfg.fields.find(f => {
       const lbl = (f.label || '').toLowerCase().trim();
       const match = looseKeywords.some(k => lbl.includes(k));
       const exclude = excludeKeywords.some(e => lbl.includes(e));
       return match && !exclude;
     });
-    
-    if (targetField && data[targetField.id] !== undefined) return data[targetField.id];
+    if (targetField && data[targetField.id] !== undefined && data[targetField.id] !== '') return data[targetField.id];
+
+    // ২. শেষে অরিজিনাল ID চেক করবে (Fallback)
+    // কিন্তু শর্ত হলো, সেই ফিল্ডের বর্তমান নাম যেন এক্সক্লুড লিস্টে না থাকে (যেমন ID studentName কিন্তু নাম Designation হলে বাতিল)!
+    targetField = cfg.fields.find(f => f.id === exactId);
+    if (targetField) {
+       const lbl = (f.label || '').toLowerCase().trim();
+       const isExcluded = excludeKeywords.some(e => lbl.includes(e));
+       if (!isExcluded && data[targetField.id] !== undefined) return data[targetField.id];
+    }
+
     return '';
   };
 
-  // 🛡️ অত্যন্ত সতর্কতার সাথে লেবেল ম্যাপিং
-  const dept = findVal('dept', ['department', 'dept'], ['department'], ['teacher']);
-  const courseTitle = findVal('courseTitle', ['course title', 'subject name'], ['course title', 'subject'], ['code', 'teacher']);
-  const courseCode = findVal('courseCode', ['course code', 'subject code'], ['code'], ['title', 'name']);
-  const coverType = findVal('coverType', ['type', 'assignment type', 'report type'], [], ['file', 'submission']);
-  const coverTitle = findVal('coverTitle', ['title', 'topic'], ['topic'], ['course', 'subject']);
+  // 🛡️ অত্যন্ত সতর্কতার সাথে লেবেল ম্যাপিং (Mutual Exclusion)
+  const dept = findVal('dept', ['department', 'dept'], ['department', 'dept'], ['teacher', 'student', 'name', 'code', 'date']);
+  const courseTitle = findVal('courseTitle', ['course title', 'subject name', 'course name'], ['course title', 'subject', 'course'], ['code', 'teacher', 'student', 'date', 'id']);
+  const courseCode = findVal('courseCode', ['course code', 'subject code'], ['code'], ['title', 'name', 'teacher', 'student', 'date']);
+  const coverType = findVal('coverType', ['type', 'assignment type', 'report type'], ['type'], ['file', 'submission', 'name', 'title', 'date']);
+  const coverTitle = findVal('coverTitle', ['title', 'topic', 'assignment topic'], ['topic'], ['course', 'subject', 'job', 'name', 'teacher', 'student', 'date']);
+
+  const teacherName = findVal('teacherName', ['teacher name', "teacher's name", 'submitted to', 'course teacher'], ['teacher', 'faculty', 'submitted to'], ['designation', 'student', 'code', 'date', 'id', 'section']);
+  const teacherDesig = findVal('teacherDesig', ['designation', "teacher's designation", 'teacher designation'], ['designation'], ['student', 'name', 'code', 'date', 'id', 'section']);
+
+  const studentName = findVal('studentName', ['student name', 'your name', 'submitted by', 'name'], ['student', 'name', 'submitted by'], ['teacher', 'course', 'subject', 'father', 'mother', 'designation', 'code', 'date', 'section']);
+  const studentId = findVal('studentId', ['student id', 'id', 'roll', 'id no'], ['id', 'roll'], ['email', 'transaction', 'name', 'title', 'teacher', 'date', 'section']);
+  const section = findVal('section', ['section', 'batch', 'group'], ['section', 'batch', 'group'], ['cross', 'blood', 'name', 'teacher', 'student', 'id', 'title', 'date']);
+
+  let submissionDate = findVal('submissionDate', ['date of submission', 'submission date', 'date'], ['date'], ['birth', 'name', 'teacher', 'student', 'title', 'code', 'id', 'section']);
   
-  const teacherName = findVal('teacherName', ['teacher name', "teacher's name", 'submitted to'], ['teacher', 'faculty'], ['designation']);
-  const teacherDesig = findVal('teacherDesig', ['designation', "teacher's designation", 'teacher designation'], ['designation'], ['student']);
-  
-  const studentName = findVal('studentName', ['student name', 'your name', 'submitted by', 'name'], ['student name', 'your name'], ['teacher', 'course', 'subject', 'father', 'mother']);
-  const studentId = findVal('studentId', ['student id', 'id', 'roll'], ['id', 'roll'], ['email', 'transaction']);
-  const section = findVal('section', ['section', 'batch'], ['section'], ['cross']);
-  
-  let submissionDate = findVal('submissionDate', ['date of submission', 'submission date', 'date'], ['date'], ['birth']);
   if (submissionDate && !submissionDate.includes('/')) {
     const d = new Date(submissionDate);
     if (!isNaN(d)) submissionDate = d.toLocaleDateString('en-GB', {day:'2-digit',month:'2-digit',year:'numeric'});
@@ -770,7 +776,7 @@ function renderPreview() {
       <tr>
         <td>
           <strong>${teacherName}</strong>
-          ${teacherDesig}<br/>
+          ${teacherDesig ? `<br/>${teacherDesig}` : ''}<br/>
           Department of ${dept || 'Computer Science and Engineering'}<br/>
           Northern University of Business &amp; Technology Khulna.
         </td>
@@ -786,6 +792,7 @@ function renderPreview() {
     <div class="cover-date">Date of Submission: ${submissionDate}</div>
   </div>`;
 }
+
 
 
 
